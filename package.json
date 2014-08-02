@@ -1,0 +1,37 @@
+{
+  "name": "bb-blog",
+  "description": "",
+  "homepage": "https://github.com/michieljoris/bb-blog",
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michieljoris/bb-blog.git"
+  },
+  "author": {
+    "name": "Michiel van Oosten",
+    "email": "mail@axion5.net",
+    "url": "http://www.axion5.net/"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/michieljoris/bb-blog/blob/master/LICENSE.txt"
+    }
+  ],
+  "main": "src/bb-blog.js",
+  "bin": {},
+  "engines": {
+    "node": ">= 0.6.x"
+  },
+  "dependencies": {
+    "fs-extra": "0.8.x"
+  },
+  "devDependencies": {
+    "docco": "*"
+  },
+  "private": false,
+  "scripts": {
+    "docs": "node node_modules/.bin/docco src/bb-blog.js"
+  },
+  "version": "0.1.1"
+}
