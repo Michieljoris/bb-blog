@@ -100,8 +100,14 @@ module.exports = {
     // **NOTE:** We don't have any dependencies for this module. See the
     // `devDependencies` block for the way to include dependencies.
     "dependencies": {
-        // "dougs_vow": "*",
-        "fs-extra": "0.8.x"
+        "dougs_vow": "*",
+        "fs-extra": "0.8.x",
+        "html-builder": "git://github.com/michieljoris/html-builder.git"
+        ,"logthis": "*"
+        ,"extend": "*"
+        ,"moment": "2.8.x"
+        ,"synergipsum": "0.2.x"
+        
         
         // "colors": "*",
     },

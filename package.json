@@ -24,7 +24,12 @@
     "node": ">= 0.6.x"
   },
   "dependencies": {
-    "fs-extra": "0.8.x"
+    "dougs_vow": "*",
+    "fs-extra": "0.8.x",
+    "html-builder": "git://github.com/michieljoris/html-builder.git",
+    "logthis": "*",
+    "extend": "*",
+    "moment": "2.8.x"
   },
   "devDependencies": {
     "docco": "*"
@@ -33,5 +38,5 @@
   "scripts": {
     "docs": "node node_modules/.bin/docco src/bb-blog.js"
   },
-  "version": "0.1.1"
+  "version": "0.1.7"
 }

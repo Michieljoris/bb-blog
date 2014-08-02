@@ -1,4 +1,107 @@
-* good to know
+//put together here the stitch for the blog dynamically!!!
 
-* bugs
+* server
+- pagination -> on client, with json index available from server, possibly also
+teasers available from client, also for creating api to delete articles
+- tags and tag list and tag editing
+tags are in the text as subscript, or otherwise marked and can be shown or not through css
+- article crud and article listing and article search 
+- comments by disqus, ezypzy, just add javascript to bottom and specify identifier
+- either use title as file name, or let user add it as info to top of file, but somehow a unique filename has to be produces, since it is the way to fetch it fromthe server
 
+API:
+
+- __api/cms?
+- save (save file)
+ This triggers a rebuild of list.json
+- list (retrieve json list of files)
+[{ path: '//path/to/file.html',
+  teaser: '//path/to/file.teaser.html',
+  tags: ["t1", "t2", "t3"],
+  created: "some/date"
+]
+- delete (remove file from disk)
+- 
+
+
+* client
+- individual articles get loaded and saved and updated by name.
+- pagination from list.json, including creating links to next article.
+- tag list and archive tree can be produced by server and downloaded by client
+
+
+* concerns:
+** pagination
+** tree view/partial 
+** tag view/partial   
+** list view/partial   
+** list of files jso
+** delete files
+** using existing system of editing and saving text fragments
+  Editable text partials have their name in html comment above it.
+  Used by client as the path to save the file under server.com/article1?path=editable/article1);
+  Added by htmlbuilder because that's where the partial comes from (eg
+  editable/article1.html) when building the template it's in
+** create new file/text/article
+** teasers
+** comments   
+** metadata in text fragment on top, crossed out  
+** client can either load textfile, or template or full page with textfile integrated
+  This gets hidden through css 
+*** publish/unpublish files
+*** list of tags
+*** publication date
+*** creation date
+*** author?
+** modules
+*** save file, delete file
+*** create json list of files in dir
+*** create any templates using this json
+*** create teasers from text fragments/files    
+*** create template using the changed text file, and possily templates from last point
+** three use cases:
+*** firstdoor/angular
+    
+*** client routing
+   Build tree and tag index on client.
+ 
+*** fully static blog site
+A page for every article,  plus update tree and tag fragments/templates.
+Plus every page tha
+    
+    
+
+* types of pages (index.html for each)
+Pages with teasers are paginated 
+** article page 
+** groupings
+*** frontpage
+List of teasers
+*** tag page
+List of teasers for posts with a particular tag 
+*** archive page
+Expanded year/month/post-title tree
+Expanded month/post-title tree for a year
+List of teasers for any month page
+** Partials:
+*** archive partial
+Tree of year/month (#)
+Or tree of year/month/post
+*** tag partial
+ List of tags (#) 
+*** recent partial
+List of n most recent posts
+ 
+** create new page
+//add to index.html file as a teaser under:
+//* the appropriate tags/tagname folders 
+//* the appropriate archive/year/month folder
+//* add title to recent template
+//* add teaser to frontpage
+//all these index files need to be paginated possibly.
+//so tags/tagname/1 tags/tagname/2 etc
+//and all of them need to be rewritten on create/remove
+//so articles are grouped as teasers:
+//1. chronological (front page)
+//2. by tag
+//3. by year/month
