@@ -295,7 +295,6 @@ function renderSite(req) {
     //redo tagpages and archive pages
     //* is a file removed?possibly do all three
     //redo relevant tag and archive pages
-    
     var widgets = {
         tagWidget: tagPartial(3)
         ,archiveWidget: archivePartial()
