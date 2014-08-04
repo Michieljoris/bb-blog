@@ -1,6 +1,9 @@
 var Path = require('path');
-var extend = require('extend');
+require('logthis').config({ _on: true, 'server.js': 'debug', 'bb-blog.js': 'debug' });
 var log = require('logthis').logger._create(Path.basename(__filename));
+
+var extend = require('extend');
+
 var util = require('util');
 var moment = require('moment');
 
@@ -8,13 +11,12 @@ var VOW = require('dougs_vow');
 var fs = require('fs-extra');
 
 var htmlBuilder = require('html-builder').build;
+var serverConnection = require('./server-connection');
 
 var settings;
-
 var index = {};
 var indexList;
 var teasers = {};
-var frontPageRecipe;
 
 function sendResponse(res, err) {
     var headers = {'Content-Type': 'text/html'};
@@ -33,7 +35,6 @@ function sendResponse(res, err) {
 
 function gatherData(req) {
     var vow = VOW.make();
-    console.log('in getData');
     var data = '';
     req.on('data', function(chunk) {
         // console.log("received data!! And the chunk is:", chunk);
@@ -41,7 +42,7 @@ function gatherData(req) {
     });
     
     req.on('error', function(e) {
-        console.log('error on req!!!', e);
+        log._e('error on req!!!', e);
         vow['break']('Error on req ' + e.toString());
     });
     
@@ -52,72 +53,35 @@ function gatherData(req) {
     return vow.promise;
 }
 
-function saveFile(req, options) {
+function saveFile(req) {
     var vow = VOW.make();
     // console.log('in saveFile');
     try {
         var path = req.url.query && req.url.query.path;
-        path = Path.join(options.basePath || '', path);
-        console.log('PATH:', path);
-        // fs.writeFile(process.cwd() + '/build/' + path, data, function(err) {
-        fs.outputFile(path, req.data, function(err) {
-            if(err) {
-                console.log('ERROR!!!', err);
-                vow['break']('Error trying to save file ' + err.toString());
-            } else {
-                console.log("The file was saved!");
-                vow.keep();
-            }
-        }); 
+        if (!settings.paths.some(function(p) {
+            return path.indexOf(p) === 0;}))
+            vow.breek();
+        else {
+            req.path = path = Path.join(settings.basePath || '', path);
+            // fs.writeFile(process.cwd() + '/build/' + path, data, function(err) {
+            fs.outputFile(path, req.data, function(err) {
+                if(err) {
+                    log._e('ERROR!!!', err);
+                    vow['break']('Error trying to save file ' + err.toString());
+                } else {
+                    log("The file was saved!");
+                    vow.keep();
+                }
+            }); 
+        }
         // res.write(JSON.stringify(data));
     } catch(e) {
-        console.log('Failure to parse json');
+        log._e('Failure to parse json');
         vow['break']('Probably failure to parse json' + e.toString());
             
     }
     return vow.promise;
 } 
-
-function save(req, res, options) {
-    console.log("saveFile is handling post!!", options);
-    
-    var data;
-    return req.session.get()
-        .when(function(session){
-            console.log('session data is: ' , session);
-            if (options.auth && (!session.data || !session.data.verified))
-                return VOW.broken('Not authorized.');
-            return gatherData(req);
-        })
-        .when(
-            function(someData) {
-                req.data = someData;
-                console.log('data received', req.data);
-            })
-        .when(
-            function() {
-                return saveFile(req, options);
-            });
-        // .when(
-        //     function() {
-        //         console.log('file saved');
-        //         console.log('rebuilding site and sending response');
-        //         // htmlBuilder.build();
-        //         // return next(req, res, data);
-        //     });
-        // .when(
-        //     function() {
-        //         sendResponse(res);
-        //     }, 
-        //     function(err) {
-        //         sendResponse(res, err);
-        //     }
-        // );
-}; 
-
-function remove(req, res) {
-    
-}
 
 function parseMetaData(txt) {
     //TODO parse text for following data:
@@ -132,7 +96,7 @@ function parseMetaData(txt) {
 
 //this is a flat folder for now
 function createListing(dir) {
-    log('dir:', dir);
+    log('creating listing for dir:', dir);
     var files = fs.readdirSync(dir); 
     var listing = {};
     files.forEach(function(file) {
@@ -149,10 +113,10 @@ function createListing(dir) {
 
 
 function writeIndexJson(dir, fileName, data, outDir) {
-    console.log(dir, fileName);
+    log(dir, fileName);
     var vow = VOW.make();
     // list[path] = extractMeta(data);
-    console.log(dir);
+    log(dir);
     log('Saving json of dir contents to ' + Path.resolve(outDir, 'index.json'));
     try {
         if (!index)  index = createListing(dir);
@@ -168,19 +132,6 @@ function writeIndexJson(dir, fileName, data, outDir) {
     return vow.promise;
 }
 
-function wrap(recipePath) {
-    log(recipePath);
-}
-
-function archive() {
-    //produce html that lists all posts grouped by year and month
-    
-}
-
-function tags() {
-    
-    
-}
 
 function sortIndexListByDate() {
     indexList.sort(function compare(p1, p2) {
@@ -196,7 +147,6 @@ function sortIndexListByDate() {
 }
 
 function recentPartial(n, filterAttr) {
-    sortIndexListByDate();
     return '<ul id="most-recent-partial">\n' +
         indexList
         .filter(function(p) {
@@ -245,7 +195,6 @@ function tagPartial(n) {
 
 function groupByYearMonth(filterAttr) {
     var archive = {};
-    sortIndexListByDate();
     indexList
         .filter(function(p) {
             return !filterAttr || p[filterAttr];
@@ -326,72 +275,159 @@ function evalFile(fileName) {
           eval(file);
           return exports;
         } catch (e) {
-            console.log('Error reading data file: '.red, e);
+            log._e('Error reading data file: '.red, e);
             return {};
         }
 } 
 
-function frontPage() {
-    var recipe = frontPageRecipe ||
-        evalFile(Path.join(settings.basePath, 'front-page-recipe.js'));
+var outPath;
+
+function renderSite(req) {
+    //make list of pages to render
+    if (!index)
+        index = createListing(Path.join(settings.basePath, settings.posts));
+    indexList = Object.keys(index).map(function(k) { return index[k]; });
     sortIndexListByDate();
-    recipe.partials.ids.main = pagedTeasers(indexList,3);
-    recipe.partials.ids.tagWidget = tagPartial(3);
-    recipe.partials.ids.archiveWidget = archivePartial();
-    recipe.partials.ids.recentWidget = recentPartial(3);
+    //TODO
+    //* is there a new file?, then do all three
+    //update relevant tag and archive pages
+    //* is a file updated? do the tagWidget potentially
+    //redo tagpages and archive pages
+    //* is a file removed?possibly do all three
+    //redo relevant tag and archive pages
     
-    console.log(util.inspect(recipe, {colors:true, depth:10}));
-    htmlBuilder(recipe).when(
-        function() {
-            console.log('ok!');
-            reload();
+    var widgets = {
+        tagWidget: tagPartial(3)
+        ,archiveWidget: archivePartial()
+        ,recentWidget: recentPartial(3)
+        // ,main: pagedTeasers(indexList, 3)
+    };
+    var config;
+    //front page
+    config = {
+        recipe: 'generic-recipe.js'
+        ,out: 'www/index.html' //optional, relative to root
+        ,indexList: indexList
+        ,widgets: widgets
+    };
+    createPage(config)
+        .when(
+            function() {
+                log('--------------------');
+                config = {
+                    recipe: 'generic-recipe.js'
+                    ,out: 'www/index.html' //optional, relative to root
+                    ,indexList: indexList
+                    ,widgets: widgets
+                };
+                return createPage(config);
+            })
+        .when(
+            function() {
+                log('--------------------');
+                config = {
+                    recipe: 'generic-recipe.js'
+                    ,out: 'www/tag.html' //optional, relative to root
+                    ,indexList: indexList
+                    ,widgets: widgets
+                };
+                return createPage(config);
+            })
+        .when(
+            function() {
+                log('ok!');
+                serverConnection.reload();
+            }
+            ,function(err) {
+                log.e('Error', err);
+            }
+        );
+    
+    var toBeRendered = [];
+    function recur() {
+        if (toBeRendered.length) {
+            return createPage(toBeRendered.pop()).when(
+                recur
+            );
         }
-        ,function(err) {
-            console.log('Error', err);
-        }
-    );
+        else return VOW.kept();
+    }
+    return recur();
+    //front page
+    // createPage(config);
+} 
+
+var recipes = {};
+function createPage(config) {
+    outPath =  config.out;
+    var recipe = recipes[config.recipe] = recipes[config.recipe] ||
+        evalFile(Path.join(settings.basePath, config.recipe));
+    //Set ids:
+    Object.keys(recipe.partials.ids).forEach(function(id) {
+        if (!recipe.partials.ids[id])
+            recipe.partials.ids[id] = config.widgets[id];
+    });
+    
+    log(util.inspect(recipe, {colors:true, depth:10}));
+    return htmlBuilder(recipe);
 }
 
-function tagPages() {
-    var recipe = frontPageRecipe ||
-        evalFile(Path.join(settings.basePath, 'tag-page-recipe.js'));
-    var archive = groupByYearMonth();
-    recipe.partials.ids.main = pagedTeasers(indexList,3);
-    recipe.partials.ids.tagWidget = tagPartial(3);
-    recipe.partials.ids.archiveWidget = archivePartial();
-    recipe.partials.ids.recentWidget = recentPartial(3);
+//API-----------------------
+function save(req, res) {
+    log("saveFile is handling post!!", settings);
     
-    console.log(util.inspect(recipe, {colors:true, depth:10}));
-    htmlBuilder(recipe).when(
-        function() {
-            console.log('ok!');
-            reload();
-        }
-        ,function(err) {
-            console.log('Error', err);
-        }
-    );
+    return req.session.get()
+        .when(function(session){
+            log('session data is: ' , session);
+            if (settings.auth && (!session.data || !session.data.verified))
+                return VOW.broken('Not authorized.');
+            return gatherData(req);
+        })
+        .when(
+            function(someData) {
+                req.data = someData;
+                log('data received', req.data);
+                return saveFile(req);
+            })
+        .when(
+            function() {
+                log('Rendering site');
+                return renderSite(req);
+            })
+        .when(
+            function() {
+                sendResponse(res);
+            }, 
+            function(err) {
+                sendResponse(res, err);
+            }
+        );
+}; 
+
+function remove(req, res) {
+    
 }
 
 var defaults = {
-    basePath: 'build'
+    basePath: 'build',
+    auth: true,
+    pagination: 3,
+    paths: ['editable', 'posts'],
+    posts: 'posts'
 };
 
 module.exports = {
     init: function (someSettings) {
         settings = extend(defaults, someSettings);
     },
-    save: save //create, update
-    ,delete: remove
-    ,sendResponse: sendResponse
-    ,writeIndexJson: writeIndexJson
-    ,wrap: wrap
-    ,archive: archive
-    ,tags: tags
+    save: save, //create, update
+    remove: remove
+    // ,sendResponse: sendResponse
+    // ,writeIndexJson: writeIndexJson
 };
     
 
-
+//TEST -=================================================
 
 indexList = [
     { title: 'Some title', publishedAt: new Date('11/May/2010')  ,tags: ["a", "b", "d"]},
@@ -417,6 +453,10 @@ indexList.forEach(function(t) {
 
 module.exports.init({
     basePath: '../../blog/build'
+});
+
+serverConnection.set(function () {
+    renderSite();
 });
 
 
@@ -450,67 +490,3 @@ module.exports.init({
 
 
 // console.log(pagedTeasers(indexList, 2));
-function test() {
-    frontPage();
-}
-
-function reload() {
-    console.log('sending reload');
-    websocket.send('reload');
-    websocket.close();
-}
-
-var WebSocket = require('ws');
-var websocket;
-var URL = "ws://localhost:9100";
-function enableWebsocket() {
-    console.log('Html-builder: Connecting to '.blue, URL);
-    var probe;
-    var tried = 0;
-    function connect() {
-        if (tried === 0) {
-            console.log('Trying to connect to ' + URL);
-        }
-        else process.stdout.write('.');
-        websocket = new WebSocket(URL);
-    
-        // When the connection is open, send some data to the server
-        websocket.onopen = function () {
-                
-            websocket.send('buildMonitor connected');
-            console.log('\nbuildMonitor connected to ' + URL);
-            test();
-            // clearTimeout(probe);
-            tried = 0;
-        };
-
-        // Log errors
-        websocket.onerror = function (error) {
-            // console.log("ERROR", err);
-        };
-
-        // Log messages from the server
-        websocket.onmessage = function (e) {
-            clearTimeout(probe);
-            console.log('Server: ' , e.data);
-            // if (e.data === "reload") {
-            //     location.reload();
-            // }
-        };
-        
-        websocket.onclose = function (e) {
-            console.log("Connection closed..");
-            // probe = setInterval(function() {
-            //     connect();
-            // },1000);
-        };
-        tried++;
-    }
-    connect();
-    // probe = setInterval(function() {
-    //     connect();
-    // },1000);
-};
-
-
-enableWebsocket();
