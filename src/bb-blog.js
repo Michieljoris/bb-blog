@@ -309,7 +309,7 @@ function renderSite(req) {
         ,indexList: indexList
         ,widgets: widgets
     };
-    createPage(config)
+    renderPage(config)
         .when(
             function() {
                 log('--------------------');
@@ -319,7 +319,7 @@ function renderSite(req) {
                     ,indexList: indexList
                     ,widgets: widgets
                 };
-                return createPage(config);
+                return renderPage(config);
             })
         .when(
             function() {
@@ -330,7 +330,7 @@ function renderSite(req) {
                     ,indexList: indexList
                     ,widgets: widgets
                 };
-                return createPage(config);
+                return renderPage(config);
             })
         .when(
             function() {
@@ -345,7 +345,7 @@ function renderSite(req) {
     var toBeRendered = [];
     function recur() {
         if (toBeRendered.length) {
-            return createPage(toBeRendered.pop()).when(
+            return renderPage(toBeRendered.pop()).when(
                 recur
             );
         }
@@ -357,7 +357,7 @@ function renderSite(req) {
 } 
 
 var recipes = {};
-function createPage(config) {
+function renderPage(config) {
     outPath =  config.out;
     var recipe = recipes[config.recipe] = recipes[config.recipe] ||
         evalFile(Path.join(settings.basePath, config.recipe));
