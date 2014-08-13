@@ -1,8 +1,17 @@
 var WebSocket = require('ws');
 var websocket;
-var URL = "ws://localhost:9100";
 
 var test;
+
+//This little module opens a connection to URL, when opened executes fun and
+//returns a function that can send the reload msg to the open websocket at URL.
+module.exports = {
+    onOpen: function(URL, fun) {
+        enableWebsocket(URL);
+        test = fun;
+        return reload;
+    }
+};
 
 function reload() {
     console.log('sending reload');
@@ -10,7 +19,7 @@ function reload() {
     websocket.close();
 }
 
-function enableWebsocket() {
+function enableWebsocket(URL) {
     console.log('Html-builder: Connecting to '.blue, URL);
     var probe;
     var tried = 0;
@@ -64,10 +73,3 @@ function enableWebsocket() {
 
 
   
-module.exports = {
-    reload: reload,
-    set: function(f) {
-        test = f;
-        enableWebsocket();
-    }
-};

@@ -1,64 +1,6 @@
-//put together here the stitch for the blog dynamically!!!
-
-* server
-- pagination -> on client, with json index available from server, possibly also
-teasers available from client, also for creating api to delete articles
-- tags and tag list and tag editing
-tags are in the text as subscript, or otherwise marked and can be shown or not through css
-- article crud and article listing and article search 
-- comments by disqus, ezypzy, just add javascript to bottom and specify identifier
-- either use title as file name, or let user add it as info to top of file, but somehow a unique filename has to be produces, since it is the way to fetch it fromthe server
-
-API:
-
-- __api/cms?
-- save (save file)
- This triggers a rebuild of list.json
-- list (retrieve json list of files)
-[{ path: '//path/to/file.html',
-  teaser: '//path/to/file.teaser.html',
-  tags: ["t1", "t2", "t3"],
-  created: "some/date"
-]
-- delete (remove file from disk)
-- 
-
-
-* client
-- individual articles get loaded and saved and updated by name.
-- pagination from list.json, including creating links to next article.
-- tag list and archive tree can be produced by server and downloaded by client
-
-
 * concerns:
-** pagination
-** tree view/partial 
-** tag view/partial   
-** list view/partial   
-** list of files jso
-** delete files
-** using existing system of editing and saving text fragments
-  Editable text partials have their name in html comment above it.
-  Used by client as the path to save the file under server.com/article1?path=editable/article1);
-  Added by htmlbuilder because that's where the partial comes from (eg
-  editable/article1.html) when building the template it's in
-** create new file/text/article
-** teasers
-** comments   
-** metadata in text fragment on top, crossed out  
-** client can either load textfile, or template or full page with textfile integrated
-  This gets hidden through css 
-*** publish/unpublish files
-*** list of tags
-*** publication date
-*** creation date
-*** author?
-** modules
-*** save file, delete file
-*** create json list of files in dir
-*** create any templates using this json
-*** create teasers from text fragments/files    
-*** create template using the changed text file, and possily templates from last point
+** create pages using json
+** create fake articles using some text generator for testing
 ** three use cases:
 *** firstdoor/angular
     
@@ -70,38 +12,194 @@ A page for every article,  plus update tree and tag fragments/templates.
 Plus every page tha
     
     
-
-* types of pages (index.html for each)
-Pages with teasers are paginated 
-** article page 
-** groupings
-*** frontpage
-List of teasers
-*** tag page
-List of teasers for posts with a particular tag 
-*** archive page
-Expanded year/month/post-title tree
-Expanded month/post-title tree for a year
-List of teasers for any month page
-** Partials:
-*** archive partial
-Tree of year/month (#)
-Or tree of year/month/post
-*** tag partial
- List of tags (#) 
-*** recent partial
-List of n most recent posts
+** pages with always paginated?
  
-** create new page
-//add to index.html file as a teaser under:
-//* the appropriate tags/tagname folders 
-//* the appropriate archive/year/month folder
-//* add title to recent template
-//* add teaser to frontpage
-//all these index files need to be paginated possibly.
-//so tags/tagname/1 tags/tagname/2 etc
-//and all of them need to be rewritten on create/remove
-//so articles are grouped as teasers:
-//1. chronological (front page)
-//2. by tag
-//3. by year/month
+* --------------------
+* recipes:
+post, possibly for tag, archive, month, year
+
+All partials embedded get a identifiable comment on top that can be used on the
+client to refer to the partial, for example when saving the partial's edited
+content. Only divs with class="editable" are editable..
+So in #main we can embed a post or tag/month/year teaser list, or an archive
+tree, however to use just ids for the dynamic contant in recipe we need a
+slighty different recipe using different html, namely one that has the
+class="editable" on the #main div, where the id is embedded.
+
+  Editable text partials have their name in html comment above it.
+  Used by client as the path to save the file under server.com/article1?path=editable/article1);
+  Added by htmlbuilder because that's where the partial comes from (eg
+  editable/article1.html) when building the template it's in
+  
+* new post?
+Insert empty post in unpublished folder, no tags, unique title (possibly from
+client), title is only allowed when not in flat list of the posts/ folder
+
+* pagination?
+group of teasers with links to other pages with more teasers
+always paginate? 
+
+* unpublished posts?
+Make unpublished archive type widget with unpublished posts.
+move posts in and out of unpublished folder.
+configure bb-server not serve from this folder unless authenticated
+
+* rebuilding paginated page?
+ Just add the teaser to the page, split page when getting too long, also then
+ redo page befor and after to update next and previous links
+* comments?
+Just add disqus script tag to post page
+
+* metadata in text fragment on top, crossed out 
+ or some other way where it is easy to parse, and easy to hide through css 
+ depends on online editor used a little bit..
+ 
+* ---------------------------
+* file structure on server?
+*** basePath/ /in build dir of site, set in bb-blog.init
+- recipe.js //recipes passed into bb-blog
+- list-recipe.js
+- tag-recipe.js
+**** post //path set in init of bb-blog
+- Title of post one.html //dynamically discovered by bb-blog
+- Title of post two.html
+- Title of post three.html
+***** unpublished  //path set in init of bb-blog
+- Title of post four.html //dynamically discovered by bb-blog
+- Title of post five.html
+- Title of post six.html
+** bb-blog uses the above data to produce: 
+*** www  
+latest.html //latest posts page, name set in bb-blog.init
+archive.html // list in tree form of all posts
+**** post //dir set in recipe
+- Title of post one.html
+- Title of post two.html
+- Title of post three.html
+***** unpublished  //dir set in bb-blog-init
+- Title of post four.html
+- Title of post five.html
+- Title of post six.html
+**** tag
+***** tag-one    
+****** 1
+index.html // list of paginated teasers
+****** 2
+index.html // list of paginated teasers
+
+***** tag-two    
+**** teaser     
+    <mirror of post dir, but abridged posts> 
+**** widget //set ini bb-blog-init
+- archive.html
+- recent.html
+- tags.html
+**** 2013  //list of teasers
+index.html // link to ./1/index.html
+***** 1
+index.html // list of paginated teasers
+***** 2
+index.html // list of paginated teasers
+***** last
+index.html // list of paginated teasers
+***** June
+index.html link to ./1/index.html
+****** 1
+index.html // list of paginated teasers
+****** last 
+index.html // list of paginated teasers
+***** October
+****** 1
+index.html // list of paginated teasers
+****** 2
+index.html // list of paginated teasers
+      
+**** 2014 
+index.html
+***** June
+index.html
+***** October
+index.html
+
+***** 1
+index.html // list of paginated teasers
+***** 2
+index.html // list of paginated teasers
+
+
+* ---------------------------
+* Files to build
+** widgets
+recent, archive and tag widget
+
+** pages
+*** an archive page, just a list in tree form (year/month/title)
+*** a tag page, paginated, teasers
+links to other pages when more than one page:
+previous, next, page number, last, first page
+*** a month page, paginated, teasers
+links to other pages when more than one page:
+next/previous month/year 
+previous, next, page number, last, first page
+*** a year page, paginated, teasers
+links to other pages when more than one page:
+next/previous month/year 
+previous, next, page number, last, first page  
+*** a landing page, paginated, teasers
+A list of all posts in reverse chronological order.
+links to other pages when more than one page:
+previous, next, page number, last, first page 
+*** a post page
+   add disqus comment script tag to embed comments
+   
+** json of posts on server
+  When set in bb-blog.init, also add list/archive/tag
+  //by id=path:
+  posts: {   
+  '//path/to/file.html': {
+  path: '//path/to/file.html'
+  teaser: '//path/to/file.teaser.html',
+  title: 'some title'
+  tags: ["t1", "t2", "t3"],
+  published: "12 June 2014"
+  created: "some/date"
+  author: 'bla foo'
+  }
+  //Posts in reverse chronological order
+  byReverseDate: [ <list of posts paths>]
+  //By year/month with posts in chronological order:
+  byYearMonth: { 2014: { Jan: [ <list of posts> ]}}
+  //by tag with posts in chronological order:
+  byTag: { tagOne: [ <list of posts> ]} }
+}
+
+* Render site:
+Build all
+
+* Save and delete:
+retrieve old version and read tags and publish date and title
+if not different ->  finished
+else:
+rebuild post page
+then selectively rebuild:
+** same publish date  
+*** same title, same tags, 
+    so different teaser only
+    if teaser is different:
+    rebuild month, year, landing and post page
+*** same title, different tags:  
+    if teaser is different:
+    
+*** different title, same tags:  
+*** different title, different tags:  
+** different publish date  
+*** same title, same tags, 
+- all widgets, archive page
+- relevant month and year pages 
+- tag pages 
+- post page 
+*** same title, different tags:  
+*** different title, same tags:  
+*** different title, different tags:  
+
+

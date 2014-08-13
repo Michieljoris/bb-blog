@@ -3,20 +3,22 @@ require('logthis').config({ _on: true, 'server.js': 'debug', 'bb-blog.js': 'debu
 var log = require('logthis').logger._create(Path.basename(__filename));
 
 var extend = require('extend');
-
 var util = require('util');
 var moment = require('moment');
-
 var VOW = require('dougs_vow');
 var fs = require('fs-extra');
 
 var htmlBuilder = require('html-builder').build;
-var serverConnection = require('./server-connection');
+var webSocketConnection = require('./server-connection');
 
 var settings;
 var index = {};
 var indexList;
 var teasers = {};
+
+var recipes = {};
+var outPath;
+
 
 function sendResponse(res, err) {
     var headers = {'Content-Type': 'text/html'};
@@ -58,6 +60,7 @@ function saveFile(req) {
     // console.log('in saveFile');
     try {
         var path = req.url.query && req.url.query.path;
+        //only save to valid 'paths'
         if (!settings.paths.some(function(p) {
             return path.indexOf(p) === 0;}))
             vow.breek();
@@ -111,7 +114,6 @@ function createListing(dir) {
     return listing;
 }
 
-
 function writeIndexJson(dir, fileName, data, outDir) {
     log(dir, fileName);
     var vow = VOW.make();
@@ -131,7 +133,6 @@ function writeIndexJson(dir, fileName, data, outDir) {
     }
     return vow.promise;
 }
-
 
 function sortIndexListByDate() {
     indexList.sort(function compare(p1, p2) {
@@ -280,21 +281,26 @@ function evalFile(fileName) {
         }
 } 
 
-var outPath;
+function renderPage(config) {
+    outPath =  config.out;
+    var recipe = recipes[config.recipe] = recipes[config.recipe] ||
+        evalFile(Path.join(settings.basePath, config.recipe));
+    //Set ids:
+    Object.keys(recipe.partials.ids).forEach(function(id) {
+        if (!recipe.partials.ids[id])
+            recipe.partials.ids[id] = config.widgets[id];
+    });
+    
+    log(util.inspect(recipe, {colors:true, depth:10}));
+    return htmlBuilder(recipe);
+}
 
-function renderSite(req) {
+function renderSite(recipe) {
     //make list of pages to render
     if (!index)
         index = createListing(Path.join(settings.basePath, settings.posts));
     indexList = Object.keys(index).map(function(k) { return index[k]; });
     sortIndexListByDate();
-    //TODO
-    //* is there a new file?, then do all three
-    //update relevant tag and archive pages
-    //* is a file updated? do the tagWidget potentially
-    //redo tagpages and archive pages
-    //* is a file removed?possibly do all three
-    //redo relevant tag and archive pages
     var widgets = {
         tagWidget: tagPartial(3)
         ,archiveWidget: archivePartial()
@@ -335,7 +341,7 @@ function renderSite(req) {
         .when(
             function() {
                 log('ok!');
-                serverConnection.reload();
+                reload();
             }
             ,function(err) {
                 log.e('Error', err);
@@ -356,20 +362,6 @@ function renderSite(req) {
     // createPage(config);
 } 
 
-var recipes = {};
-function renderPage(config) {
-    outPath =  config.out;
-    var recipe = recipes[config.recipe] = recipes[config.recipe] ||
-        evalFile(Path.join(settings.basePath, config.recipe));
-    //Set ids:
-    Object.keys(recipe.partials.ids).forEach(function(id) {
-        if (!recipe.partials.ids[id])
-            recipe.partials.ids[id] = config.widgets[id];
-    });
-    
-    log(util.inspect(recipe, {colors:true, depth:10}));
-    return htmlBuilder(recipe);
-}
 
 //API-----------------------
 function save(req, res) {
@@ -409,10 +401,54 @@ function remove(req, res) {
 
 var defaults = {
     basePath: 'build',
+    //valid paths to save files, relative to basePath
+    paths: ['editable', 'post'],
+    //path where posts are found
+    posts: 'post',
+    //path where teasers are found
+    teasers: 'teaser',
+    //path where unpublished posts/teasers are found
+    //this is relative to the posts/teasers path
+    unpublished: 'unpublished',
+    //when true save only when session.data.verified == true
     auth: true,
-    pagination: 3,
-    paths: ['editable', 'posts'],
-    posts: 'posts'
+    //Number of teasers/posts per page
+    pagination: 3
+    //what to build:
+    // ** widgets
+    // recent, archive and tag widget
+    ,widgets: {
+        recent: { save: false } ,archive: { save: false } ,tag: false
+    }
+    ,pages: {
+        // *** an list page, just a list in tree form, by year/month
+        // archive: { recipe: 'some archive recipe' }
+        archive: true
+        // *** a tag page, paginated, teasers
+        // links to other pages when more than one page
+        // previous, next, page number, last, first page
+        ,tag: true
+        // *** a month page, paginated, teasers
+        // next/previous month/year 
+        // links to other pages when more than one page
+        ,month: true //uses default recipe
+        // previous, next, page number, last, first page
+        // *** a year page, paginated, teasers
+        // links to other pages when more than one page
+        // next/previous month/year 
+        // previous, next, page number, last, first page  
+        // ,year: 'some year recipe.js'
+        ,year: true
+        // *** a landing page with all posts (paginated)
+        ,list: true
+        // *** always a post page 
+    }
+    //recipe used by pages unless specified otherwise
+    ,recipe: 'recipe.js'
+    // ** json of posts on server by post ide
+    //Also set whether to add precalculated lists
+    ,json: { byTag: true, byYearMonth: true, byReverseDate: true }
+    
 };
 
 module.exports = {
@@ -420,13 +456,34 @@ module.exports = {
         settings = extend(defaults, someSettings);
     },
     save: save, //create, update
-    remove: remove
+    remove: remove,
+    render: renderSite
     // ,sendResponse: sendResponse
+    
     // ,writeIndexJson: writeIndexJson
 };
     
 
 //TEST -=================================================
+module.exports.init({
+    //build dir of blog repo
+    basePath: '../../blog/build',
+    auth: false
+});
+
+
+var synergipsum = require('synergipsum');
+function lorem(maxParagraphs) {
+    if (maxParagraphs <= 0) return '';
+    var min = 3, max  = 6;
+    var result = [];
+    while (maxParagraphs--) {
+        var paragraphLength = min + Math.floor(Math.random()*(max+1-min));
+        var generator = synergipsum.create(paragraphLength); 
+        result.push('<p>' + generator.generate() + '</p>');
+    }
+    return result.join('\n');
+}
 
 indexList = [
     { title: 'Some title', publishedAt: new Date('11/May/2010')  ,tags: ["a", "b", "d"]},
@@ -450,11 +507,11 @@ indexList.forEach(function(t) {
     t.slug = t.title.toLowerCase().replace(/ /g, '-').replace(/[^A-Za-z0-9_-]/g, '');
 });
 
-module.exports.init({
-    basePath: '../../blog/build'
-});
 
-serverConnection.set(function () {
+//This little module opens a connection to URL, when opened executes fun and
+//returns a function that can send the reload msg to the open websocket at URL.
+var URL = "ws://localhost:9100";
+var reload = webSocketConnection.onOpen(URL, function () {
     renderSite();
 });
 
