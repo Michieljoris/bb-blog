@@ -174,7 +174,7 @@ previous, next, page number, last, first page
 }
 
 * Render site:
-Build all
+  Build all
 
 * Save and delete:
 retrieve old version and read tags and publish date and title
@@ -182,15 +182,17 @@ if not different ->  finished
 else:
 rebuild post page
 then selectively rebuild:
+if post is different: post page
+if teaser is different:
+rebuild relevant month, year, landing
 ** same publish date  
 *** same title, same tags, 
-    so different teaser only
-    if teaser is different:
-    rebuild month, year, landing and post page
+    Done
 *** same title, different tags:  
-    if teaser is different:
-    
+    tag pages, 
+    tag widget
 *** different title, same tags:  
+    
 *** different title, different tags:  
 ** different publish date  
 *** same title, same tags, 

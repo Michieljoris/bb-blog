@@ -2,6 +2,7 @@ var Path = require('path');
 require('logthis').config({ _on: true, 'server.js': 'debug', 'bb-blog.js': 'debug' });
 var log = require('logthis').logger._create(Path.basename(__filename));
 
+require('datejs');
 var extend = require('extend');
 var util = require('util');
 var moment = require('moment');
@@ -55,46 +56,75 @@ function gatherData(req) {
     return vow.promise;
 }
 
-function saveFile(req) {
+function addRemoveFile(req) {
+    log('in addremovefile');
     var vow = VOW.make();
-    // console.log('in saveFile');
-    try {
-        var path = req.url.query && req.url.query.path;
-        //only save to valid 'paths'
-        if (!settings.paths.some(function(p) {
-            return path.indexOf(p) === 0;}))
-            vow.breek();
-        else {
-            req.path = path = Path.join(settings.basePath || '', path);
-            // fs.writeFile(process.cwd() + '/build/' + path, data, function(err) {
-            fs.outputFile(path, req.data, function(err) {
-                if(err) {
-                    log._e('ERROR!!!', err);
-                    vow['break']('Error trying to save file ' + err.toString());
-                } else {
-                    log("The file was saved!");
-                    vow.keep();
-                }
-            }); 
-        }
-        // res.write(JSON.stringify(data));
-    } catch(e) {
-        log._e('Failure to parse json');
-        vow['break']('Probably failure to parse json' + e.toString());
-            
+    var path = req.url.query && req.url.query.path;
+    //only save/remove at valid 'paths'
+    if (!settings.paths.some(function(p) {
+        return path.indexOf(p) === 0;}))
+        vow.breek('Not a valid path: ' + path);
+    else {
+        log('adding/removing: ', path);
+        req.path = path = Path.join(settings.basePath || '', path);
+        var callback = function(err) {
+            if(err) {
+                log._e('ERROR!!!', err);
+                vow['break']('Error trying to save/remove file ' + err.toString());
+            } else {
+                log("The file was " + ( req.data ? 'saved!' : 'removed!'));
+                vow.keep();
+            }
+        };
+        if (typeof req.data !== 'undefined')
+            fs.writeFile.apply(fs, [path, req.data, callback]);
+        else fs.remove.apply(fs, [path, callback]);
     }
     return vow.promise;
 } 
 
-function parseMetaData(txt) {
+function parseValue(key, value) {
+    log(key, value);
+    var booleans = {
+        'yes': true, 'no': false, 'true': true, 'false': false, '0': false, '1': true };
+    switch(key) {
+        case 'tags':
+        case 'categories': return value.replace(/,/g,' ').split(' ');
+        case 'published':
+        // case 'created': return moment(value).format('D/MMM/YYYY');
+        case 'created': return Date.parse(value);
+        default: return typeof booleans[value] === 'boolean' ? booleans[value] : value;
+    };
+}
+
+function parseMetaData(postFileName, text) {
+    var regexp = /<pre>([^]*)<\/pre>/;
+    var meta = { published: false,
+                 title: postFileName.slice(0, postFileName.lastIndexOf('.')),
+                 created: new Date(),
+                 published: new Date(),
+                 tags: [],
+                 categories: [],
+                 comments: false
+               };
+    var metaText = regexp.exec(text);
+    if (metaText) {
+        metaText = metaText[1];
+        metaText.split('\n')
+            .filter(function(line) {
+                return line.length; })
+            .forEach(function(line) {
+                    var keyValue = line.split(':').map(function(part) {
+                        return part.trim(); 
+                    });
+                meta[keyValue[0]] = parseValue(keyValue[0], keyValue[1]);
+            
+            });
+    }
+    log(meta);
+    // log(meta.title, metaText);
+    
     //TODO parse text for following data:
-    return { published: true,
-             createdAt: new Date(),
-             publishedAt: new Date(),
-             tags: ["tag1", "tag2"],
-             categories: ["catagory 1", "category 2"],
-             comments: true
-           };
 }
 
 //this is a flat folder for now
@@ -242,7 +272,6 @@ function teaser(data) {
     return result ? result[2] : data;
 }
 
-
 function postIterator(posts, n) {
     return function() {
         var slice = posts.slice(0,n);
@@ -295,7 +324,15 @@ function renderPage(config) {
     return htmlBuilder(recipe);
 }
 
-function renderSite(recipe) {
+function renderSite(path, text) {
+    //all info is in req.path and req.data;
+    //if both are falsey render whole site,
+    //if typeof req.data is undefined a post has been removed
+    //otherwise the data has been saved to path
+    var postFileName = Path.basename(path);
+    parseMetaData(postFileName, text);
+    return VOW.kept();
+    
     //make list of pages to render
     if (!index)
         index = createListing(Path.join(settings.basePath, settings.posts));
@@ -341,7 +378,7 @@ function renderSite(recipe) {
         .when(
             function() {
                 log('ok!');
-                reload();
+                // reload();
             }
             ,function(err) {
                 log.e('Error', err);
@@ -364,40 +401,40 @@ function renderSite(recipe) {
 
 
 //API-----------------------
-function save(req, res) {
-    log("saveFile is handling post!!", settings);
+function handleRequest(req, res, action) {
+    log("handleRequest is handling post!!", settings);
     
     return req.session.get()
         .when(function(session){
             log('session data is: ' , session);
             if (settings.auth && (!session.data || !session.data.verified))
                 return VOW.broken('Not authorized.');
-            return gatherData(req);
+            if (action === 'save') return gatherData(req);
+            else return VOW.kept();
         })
         .when(
             function(someData) {
                 req.data = someData;
                 log('data received', req.data);
-                return saveFile(req);
+                return addRemoveFile(req);
             })
         .when(
             function() {
-                log('Rendering site');
-                return renderSite(req);
+                log('Rendering site after saving/removing post: ', req.path);
+                return renderSite(req.path, req.data);
+                return VOW.kept();
             })
         .when(
             function() {
+                log('sending response, all good');
                 sendResponse(res);
             }, 
             function(err) {
+                log('sending response, ERROR!');
                 sendResponse(res, err);
             }
         );
 }; 
-
-function remove(req, res) {
-    
-}
 
 var defaults = {
     basePath: 'build',
@@ -455,8 +492,8 @@ module.exports = {
     init: function (someSettings) {
         settings = extend(defaults, someSettings);
     },
-    save: save, //create, update
-    remove: remove,
+    save: function(req, res) { handleRequest(req, res, 'save'); },
+    remove: function(req, res) { handleRequest(req, res, 'remove'); },
     render: renderSite
     // ,sendResponse: sendResponse
     
@@ -471,6 +508,8 @@ module.exports.init({
     auth: false
 });
 
+console.log(settings);
+
 
 var synergipsum = require('synergipsum');
 function lorem(maxParagraphs) {
@@ -484,6 +523,8 @@ function lorem(maxParagraphs) {
     }
     return result.join('\n');
 }
+
+// console.log(lorem(3));
 
 indexList = [
     { title: 'Some title', publishedAt: new Date('11/May/2010')  ,tags: ["a", "b", "d"]},
@@ -508,12 +549,24 @@ indexList.forEach(function(t) {
 });
 
 
-//This little module opens a connection to URL, when opened executes fun and
-//returns a function that can send the reload msg to the open websocket at URL.
-var URL = "ws://localhost:9100";
-var reload = webSocketConnection.onOpen(URL, function () {
-    renderSite();
-});
+// This little module opens a connection to URL, when opened executes fun and
+// returns a function that can send the reload msg to the open websocket at URL.
+// var URL = "ws://localhost:9100";
+// var reload = webSocketConnection.onOpen(URL, function () {
+//     var path = Path.join( 'post', "testsave");
+//     addRemoveFile({ url: { query: { path: path }}, data: null});
+//     // fs.outputFile(Path.join(settings.basePath, 'post', "testsave"), "some test dataa", function(err) {
+//     //     if(err) {
+//     //         log._e('ERROR!!!', err);
+//     //         // vow['break']('Error trying to save file ' + err.toString());
+//     //     } else {
+//     //         log("The file was saved!");
+//     //         // vow.keep();
+//     //     }
+//     // }); 
+    
+//     // renderSite();
+// });
 
 
 // var lorem = require('lorem');
