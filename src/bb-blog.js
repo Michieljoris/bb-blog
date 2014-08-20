@@ -14,7 +14,9 @@ var webSocketConnection = require('./server-connection');
 
 var settings;
 var index = {};
+var indexUnpublished = {};
 var indexList;
+var indexListUnpublished;
 var teasers = {};
 
 var recipes = {};
@@ -59,14 +61,17 @@ function gatherData(req) {
 function addRemoveFile(req) {
     log('in addremovefile');
     var vow = VOW.make();
-    var path = req.url.query && req.url.query.path;
+    var path = req.path = req.url.query && req.url.query.path;
     //only save/remove at valid 'paths'
     if (!settings.paths.some(function(p) {
-        return path.indexOf(p) === 0;}))
+        var valid = path.indexOf(p + '/') === 0;
+        if (valid) req.path = path.slice(p.length+1);
+        return valid;
+    }))
         vow.breek('Not a valid path: ' + path);
     else {
         log('adding/removing: ', path);
-        req.path = path = Path.join(settings.basePath || '', path);
+        path = Path.join(settings.basePath || '', path);
         var callback = function(err) {
             if(err) {
                 log._e('ERROR!!!', err);
@@ -84,30 +89,32 @@ function addRemoveFile(req) {
 } 
 
 function parseValue(key, value) {
-    log(key, value);
     var booleans = {
         'yes': true, 'no': false, 'true': true, 'false': false, '0': false, '1': true };
     switch(key) {
-        case 'tags':
-        case 'categories': return value.replace(/,/g,' ').split(' ');
-        case 'published':
+      case 'tags':
+      case 'categories': return value.replace(/,/g,' ').split(' ');
+      case 'published':
         // case 'created': return moment(value).format('D/MMM/YYYY');
-        case 'created': return Date.parse(value);
-        default: return typeof booleans[value] === 'boolean' ? booleans[value] : value;
+      case 'created': return Date.parse(value);
+    default: return typeof booleans[value.toLowerCase()] === 'boolean' ?
+            booleans[value] : value;
     };
 }
 
-function parseMetaData(postFileName, text) {
+//Takes a str and tries to retrieve metadata from the first <pre> block it finds
+function parseMetaData(str, defaults) {
     var regexp = /<pre>([^]*)<\/pre>/;
-    var meta = { published: false,
-                 title: postFileName.slice(0, postFileName.lastIndexOf('.')),
-                 created: new Date(),
-                 published: new Date(),
+    var meta = extend({ publish: false,
+                 // title: postFileName.slice(0, postFileName.lastIndexOf('.')),
+                 // created: new Date(),
+                 // published: new Date(),
                  tags: [],
                  categories: [],
                  comments: false
-               };
-    var metaText = regexp.exec(text);
+               }, defaults || {});
+    var metaText = regexp.exec(str);
+    log('metaText:', metaText);
     if (metaText) {
         metaText = metaText[1];
         metaText.split('\n')
@@ -117,29 +124,34 @@ function parseMetaData(postFileName, text) {
                     var keyValue = line.split(':').map(function(part) {
                         return part.trim(); 
                     });
+                keyValue[0] = keyValue[0].toLowerCase();
                 meta[keyValue[0]] = parseValue(keyValue[0], keyValue[1]);
             
             });
     }
-    log(meta);
-    // log(meta.title, metaText);
-    
-    //TODO parse text for following data:
+    return meta;
 }
 
-//this is a flat folder for now
+//parses a flat folder and returns an object of objects containing filename and
+//metadata for each file
 function createListing(dir) {
     log('creating listing for dir:', dir);
+    var publish = Path.basename(dir) !== settings.unpublished;
     var files = fs.readdirSync(dir); 
     var listing = {};
     files.forEach(function(file) {
-        var obj = {};
-        obj.fileName =  Path.join(dir, file);
-        var stat = fs.statSync(obj.fileName);
-        if (stat.isFile()) {
-            var data = fs.readFileSync(obj.fileName, { encoding: 'utf8' });
-            listing[file] = extend(obj, parseMetaData(data));
-        }
+        var fullPath =  Path.join(dir, file);
+        // var obj = { fileName:  Path.join(dir, file) };
+        var stat = fs.statSync(fullPath);
+        if (!stat.isFile()) return;
+        var data = fs.readFileSync(fullPath, { encoding: 'utf8' });
+        listing[file] =
+            extend({ fileName: fullPath } ,
+                   parseMetaData(data,
+                                 { created: stat.ctime,
+                                   title: file.slice(0, file.lastIndexOf('.'))
+                                 }));
+        listing[file].publish = publish;
     });
     return listing;
 }
@@ -267,7 +279,7 @@ function archivePartial() {
 }
 
 function teaser(data) {
-    var regexp = new RegExp('^(.*)<p><b> *teaser *</b></p>(.*)$');
+    var regexp = new RegExp('^(.*)<p><b> *--+ *</b></p>(.*)$');
     var result = regexp.exec(data);
     return result ? result[2] : data;
 }
@@ -330,7 +342,10 @@ function renderSite(path, text) {
     //if typeof req.data is undefined a post has been removed
     //otherwise the data has been saved to path
     var postFileName = Path.basename(path);
-    parseMetaData(postFileName, text);
+    
+    // var meta = parseMetaData(text);
+    
+    // log(path, meta);
     return VOW.kept();
     
     //make list of pages to render
@@ -489,8 +504,19 @@ var defaults = {
 };
 
 module.exports = {
-    init: function (someSettings) {
+    init: function init(someSettings) {
         settings = extend(defaults, someSettings);
+        index = createListing(Path.join(settings.basePath, settings.posts));
+        var unpublished = createListing(Path.join(settings.basePath, settings.posts,
+                                                  settings.unpublished));
+        // index = extend(index, unpublished);
+        Object.keys(unpublished).forEach(function(key) {
+            if (index[key]) log._w('Duplicate named post in unpublished!!!'.red, key);
+            else index[key] = unpublished[key];
+        });
+        indexList = Object.keys(index).map(function(k) { return index[k]; });
+        sortIndexListByDate();
+        log(indexList);
     },
     save: function(req, res) { handleRequest(req, res, 'save'); },
     remove: function(req, res) { handleRequest(req, res, 'remove'); },
@@ -502,37 +528,37 @@ module.exports = {
     
 
 //TEST -=================================================
-module.exports.init({
-    //build dir of blog repo
-    basePath: '../../blog/build',
-    auth: false
-});
+// module.exports.init({
+//     //build dir of blog repo
+//     basePath: '../../blog/build',
+//     auth: false
+// });
 
 console.log(settings);
 
 
-var synergipsum = require('synergipsum');
-function lorem(maxParagraphs) {
-    if (maxParagraphs <= 0) return '';
-    var min = 3, max  = 6;
-    var result = [];
-    while (maxParagraphs--) {
-        var paragraphLength = min + Math.floor(Math.random()*(max+1-min));
-        var generator = synergipsum.create(paragraphLength); 
-        result.push('<p>' + generator.generate() + '</p>');
-    }
-    return result.join('\n');
-}
+// var synergipsum = require('synergipsum');
+// function lorem(maxParagraphs) {
+//     if (maxParagraphs <= 0) return '';
+//     var min = 3, max  = 6;
+//     var result = [];
+//     while (maxParagraphs--) {
+//         var paragraphLength = min + Math.floor(Math.random()*(max+1-min));
+//         var generator = synergipsum.create(paragraphLength); 
+//         result.push('<p>' + generator.generate() + '</p>');
+//     }
+//     return result.join('\n');
+// }
 
 // console.log(lorem(3));
 
-indexList = [
-    { title: 'Some title', publishedAt: new Date('11/May/2010')  ,tags: ["a", "b", "d"]},
-    { title: 'What is this about', publishedAt: new Date('20/Oct/2010') ,tags: ["c", "b", "d"]},
-    { title: 'A very important post', publishedAt: new Date('12/Oct/2010')  ,tags: ["d", "a"]},
-    { title: 'Oh, I do blabber on', publishedAt: new Date('12/Jan/2011')  ,tags: ["d", "a"]},
-    { title: 'Now what?', publishedAt: new Date('12/Feb/2012')  ,tags: ["d", "a"]}
-];
+// indexList = [
+//     { title: 'Some title', publishedAt: new Date('11/May/2010')  ,tags: ["a", "b", "d"]},
+//     { title: 'What is this about', publishedAt: new Date('20/Oct/2010') ,tags: ["c", "b", "d"]},
+//     { title: 'A very important post', publishedAt: new Date('12/Oct/2010')  ,tags: ["d", "a"]},
+//     { title: 'Oh, I do blabber on', publishedAt: new Date('12/Jan/2011')  ,tags: ["d", "a"]},
+//     { title: 'Now what?', publishedAt: new Date('12/Feb/2012')  ,tags: ["d", "a"]}
+// ];
 
 
 
@@ -543,10 +569,13 @@ indexList = [
 //     { title: 'ghi2', publishedAt: new Date('12/Jan/2011')  ,tags: ["d", "a"]},
 //     { title: 'ghir', publishedAt: new Date('12/Feb/2012')  ,tags: ["d", "a"]}
 // ];
-indexList.forEach(function(t) {
-    teasers[t.title] = t.tags.join('-');
-    t.slug = t.title.toLowerCase().replace(/ /g, '-').replace(/[^A-Za-z0-9_-]/g, '');
-});
+// indexList.forEach(function(t) {
+//     teasers[t.title] = t.tags.join('-');
+//     t.slug = t.title.toLowerCase().replace(/ /g, '-').replace(/[^A-Za-z0-9_-]/g, '');
+// });
+
+// var result = createListing(Path.join(settings.basePath, settings.posts));
+// log(result);
 
 
 // This little module opens a connection to URL, when opened executes fun and
