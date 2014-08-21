@@ -1,24 +1,20 @@
 var Path = require('path');
-require('logthis').config({ _on: true, 'server.js': 'debug', 'bb-blog.js': 'debug' });
+require('logthis').config({ _on: true, 'render.js': 'debug', 'bb-blog.js': 'debug' });
 var log = require('logthis').logger._create(Path.basename(__filename));
 
 require('datejs');
 var extend = require('extend');
 var util = require('util');
-var moment = require('moment');
 var VOW = require('dougs_vow');
 var fs = require('fs-extra');
 
-var htmlBuilder = require('html-builder').build;
 var webSocketConnection = require('./server-connection');
+var render = require('./render');
 
 var settings;
 var index = {};
-var indexList;
-var teasers = {};
+var publishedat;
 
-var recipes = {};
-var outPath;
 
 
 function sendResponse(res, err) {
@@ -56,29 +52,23 @@ function gatherData(req) {
     return vow.promise;
 }
 
-function addRemoveFile(path, data) {
-    log('in addremovefile');
+function saveFile(path, data) {
+    log('Saving: ', path);
     var vow = VOW.make();
-    log('adding/removing: ', path);
     path = Path.join(settings.basePath || '', path);
     var callback = function(err) {
         if(err) {
             log._e('ERROR!!!', err);
             vow['break']('Error trying to save/remove file ' + err.toString());
         } else {
-            log("The file was " + ( data ? 'saved!' : 'removed!'));
+            log("The file was saved/removed!");
             vow.keep();
         }
     };
     if (typeof data !== 'undefined')
-        fs.writeFile.apply(fs, [path, data, callback]);
-    else fs.remove.apply(fs, [path, callback]);
+        fs.writeFile(path, data, callback);
+    else fs.remove(path, callback);
     return vow.promise;
-}
-
-function sluggifyTitle(str) {
-    //TODO
-    return str;
 }
 
 function parseValue(key, value) {
@@ -88,12 +78,10 @@ function parseValue(key, value) {
     switch(key) {
       case 'tags':
       case 'categories': return value.replace(/,/g,' ').split(' ');
-      case 'published':
-        // case 'created': return moment(value).format('D/MMM/YYYY');
-      case 'created': return Date.parse(value);
-      case 'title' : return sluggifyTitle(value);
-    default: return typeof booleans[value.toLowerCase()] === 'boolean' ?
-            booleans[value] : value;
+      case 'publishedat': return Date.parse(value);
+      case 'published' :
+      case 'comments' : return booleans[value.toLowerCase()];
+    default: return value;
     };
 }
 
@@ -134,13 +122,13 @@ function getPreBlocks(str) {
 //Takes a str and tries to retrieve metadata from the first <pre> block it finds
 function parseMetaData(metaStr, defaults) {
     // var regexp = /<pre>([^]*)<\/pre>/;
-    var meta = extend({ publish: false,
+    var meta = extend({ //published: false,
                         // title: postFileName.slice(0, postFileName.lastIndexOf('.')),
                         // created: new Date(),
                         // published: new Date(),
                         tags: [],
-                        categories: [],
-                        comments: false
+                        categories: []
+                        // comments: false
                       }, defaults || {});
     // var metaText = regexp.exec(str);
     if (metaStr) {
@@ -160,6 +148,7 @@ function parseMetaData(metaStr, defaults) {
 }
 
 function retrieveTeaser(str, preBlocks) {
+    if (typeof str !== 'string') return '';
     var regexp = new RegExp('^\\s*---+\\s*$');
     var start, end;
     start = preBlocks[0] ? preBlocks[0].end + 1 : 0;
@@ -189,25 +178,28 @@ function parsePost(post) {
 //metadata for each file, sets publish prop according to path
 function createListing(dir) {
     log('creating listing for dir:', dir);
-    var publish = Path.basename(dir) !== settings.unpublished;
+    // var publish = Path.basename(dir) !== settings.unpublished;
     var files = fs.readdirSync(dir);
     var listing = {};
-    files.forEach(function(key) {
-        var fullPath =  Path.join(dir, key);
-        // var obj = { fileName:  Path.join(dir, file) };
+    files.forEach(function(file) {
+        var fullPath =  Path.join(dir, file);
         var stat = fs.statSync(fullPath);
         if (!stat.isFile()) return;
         var post = fs.readFileSync(fullPath, { encoding: 'utf8' });
         post = parsePost(post);
-        listing[key] =
-            extend({ fileName: fullPath } ,
-                   parseMetaData(post.metaStr,
-                                 { created: stat.ctime,
-                                   title: key.slice(0, key.lastIndexOf('.')),
-                                   teaser: post.teaser,
-                                   publish: publish
-                                 }));
-        listing[key].publish = publish;
+        listing[file] =
+            // extend({ fileName: fullPath } ,
+            parseMetaData(post.metaStr,
+                          { createdAt: stat.ctime,
+                            teaser: post.teaser,
+                            title: file.slice(0, file.lastIndexOf('.'))
+                          });
+        if (listing[file].published && !publishedat[file]) {
+            listing[file].publishedat =
+                publishedat[file] = listing[file].publishedat || new Date();
+        }
+        fs.writeJsonSync(Path.join(settings.basePath, settings.publishedat), publishedat);
+        listing[file].file = file;
     });
     return listing;
 }
@@ -231,257 +223,59 @@ function writeIndexJson(dir, fileName, data, outDir) {
     return vow.promise;
 }
 
-function sortIndexListByDate() {
-    indexList.sort(function compare(p1, p2) {
-        var a = p1.published;
-        var b = p2.published;
-        if (a > b)
-            return -1;
-        if (a < b)
-            return 1;
-        // a must be equal to b
-        return 0;
-    });
-}
-
-function recentPartial(n, filterAttr) {
-    return '<ul id="most-recent-partial">\n' +
-        indexList
-        .filter(function(p) {
-            return !filterAttr || p[filterAttr];
-        })
-        .slice(0,n).map(function(p) {
-            return '  <li>' + '<a href="' + p.slug + '">' + p.title + '</a></li>';
-        }).join('\n') +
-        '\n</ul>';
-}
-
-function groupByTag(filterAttr) {
-    var tags = {};
-    indexList
-        .filter(function(p) {
-            return !filterAttr || p[filterAttr];
-        })
-        .forEach(function(p) {
-            p.tags = p.tags || [];
-            p.tags.forEach(function(t) {
-                tags[t] = tags[t] || [];
-                tags[t].push(p);
-            });
-        });
-    return tags;
-}
-
-function tagPartial(n) {
-    var tags = groupByTag();
-    if (!n) n = Object.keys(tags).length;
-    return '<ul id="by-tag-partial">\n' +
-        Object.keys(tags)
-        .sort(function(t1, t2) {
-            var a = tags[t1].length;
-            var b = tags[t2].length;
-            if (a > b) return -1;
-            if (a < b) return 1;
-            return 0;
-        })
-        .slice(0,n)
-        .map(function(t) {
-            return '  <li>' + '<a href="' + t + '">' + t + '</a> (' + tags[t].length + ')</li>';
-        }).join('\n') +
-        '\n</ul>';
-}
-
-function groupByYearMonth(filterAttr) {
-    var archive = {};
-    indexList
-        .filter(function(p) {
-            return !filterAttr || p[filterAttr];
-        })
-        .forEach(function(p) {
-            if (p.publishedAt) {
-                var m = moment(p.publishedAt);
-                var year = m.year();
-                var month = m.month();
-                archive[year] = archive[year] || {};
-                archive[year][month] = archive[year][month] || [];
-                archive[year][month].unshift(p);
-            }
-        });
-    return archive;
-}
-var month = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
-              'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-
-function url(link, text) {
-    return '<a href="' + link + '" >'  + (text || link) + '</a>';
-}
-
-function archivePartial() {
-    var archive = groupByYearMonth();
-    return '<ul id="archive-partial">\n' +
-        Object.keys(archive).map(function(y) {
-            return ' <li>' + url(y) + '\n' + '  <ul>\n' +
-                Object.keys(archive[y]).map(function(m) {
-                    return '   <li>' + url(y + '/' + m, month[m]) + '\n' + '    <ul>\n' +
-                        archive[y][m].map(function(p) {
-                            return '     <li>' + url(p.slug, p.title) + '</li>';
-                        }).join('\n') +
-                        '\n    </ul>\n   </li>';
-                }).join('\n') +
-                '\n  </ul>\n </li>';
-        }).join('\n') +
-            '\n</ul>';
-}
-
-function postIterator(posts, n) {
-    return function() {
-        var slice = posts.slice(0,n);
-        posts = posts.slice(n);
-        return slice;
-        };
-}
-
-function pagedTeasers(posts, n) {
-        var pageGetter = postIterator(posts, n);
-    var pagedPosts = [];
-    var page = pageGetter();
-    while (page.length) {
-        pagedPosts.push(page);
-        page = pageGetter();
-    }
-    var pagedTeasers = [];
-    pagedPosts.forEach(function(posts) {
-        var page = posts.map(function(post) {
-            return '<div class="teaser">' + teasers[post.title] + '</div>' +
-                '<div class="more"><a href="' + post.slug + '">More</a></div>';
-        }).join('\n');
-        pagedTeasers.push(page);
-    });
-        return pagedTeasers;
-}
-
-function evalFile(fileName) {
-    var file;
-    try { file = fs.readFileSync(fileName, 'utf8');
-          eval(file);
-          return exports;
-        } catch (e) {
-            log._e('Error reading data file: '.red, e);
-            return {};
-        }
-}
-
-function renderPage(config) {
-    outPath =  config.out;
-    var recipe = recipes[config.recipe] = recipes[config.recipe] ||
-        evalFile(Path.join(settings.basePath, config.recipe));
-    //Set ids:
-    Object.keys(recipe.partials.ids).forEach(function(id) {
-        if (!recipe.partials.ids[id])
-            recipe.partials.ids[id] = config.widgets[id];
-    });
-
-    log(util.inspect(recipe, {colors:true, depth:10}));
-    return htmlBuilder(recipe);
-}
-
 function processMeta(meta) {
     log(meta);
-    if (!meta.existing) return;
     
     //delete
-    if (meta.delete) {
-        addRemoveFile(meta.existing.fileName);
-        delete index[meta.key];
+    if (index[meta.file] && meta.delete) {
+        fs.removeSync(Path.join(settings.basePath, settings.posts, meta.file));
+        delete index[meta.file];
+        return;
     }
-    //publish
-    if (meta.publish !== meta.existing.publish) {
-        var from = meta.existing.fileName;
-        var to = meta.publish ?
-            meta.existing.fileName.slice(settings.unpublished.length + 1) :
-            Path.join(settings.unpublished, meta.existing.fileName);
-        //TODO
-        
-    }
+    // //publish
+    if (meta.published && (!index[meta.file] ||
+                           (!index[meta.file].published && !publishedat[meta.file])
+                          ))
+        publishedat[meta.file] = new Date();
     // title
-    if (typeof meta.title !== 'undefined' && post.title !== existingPost.title) {
-        //TODO rename post and save it again.
-    }
-
+    meta.title = meta.title || meta.file.slice(0, meta.file.lastIndexOf('.'));
+    meta.publishedat = meta.publishedat || publishedat[meta.file];
+    index[meta.file] = meta;
 }
 
-function renderSite() {
-    // log(post);
-    // if (typeof key !== 'undefined' && typeof post !== 'undefined') {
-    //     //carry out instructions in meta
-    // }
-    return VOW.kept();
-    //make list of pages to render
-    if (!index)
-        index = createListing(Path.join(settings.basePath, settings.posts));
-    indexList = Object.keys(index).map(function(k) { return index[k]; });
-    sortIndexListByDate();
-    var widgets = {
-        tagWidget: tagPartial(3)
-        ,archiveWidget: archivePartial()
-        ,recentWidget: recentPartial(3)
-        // ,main: pagedTeasers(indexList, 3)
-    };
-    var config;
-        //front page
-    config = {
-        recipe: 'generic-recipe.js'
-        ,out: 'www/index.html' //optional, relative to root
-        ,indexList: indexList
-        ,widgets: widgets
-    };
-    renderPage(config)
-        .when(
-            function() {
-                log('--------------------');
-                config = {
-                    recipe: 'generic-recipe.js'
-                    ,out: 'www/index.html' //optional, relative to root
-                    ,indexList: indexList
-                    ,widgets: widgets
-                };
-                return renderPage(config);
-            })
-        .when(
-            function() {
-                log('--------------------');
-                config = {
-                    recipe: 'generic-recipe.js'
-                    ,out: 'www/tag.html' //optional, relative to root
-                    ,indexList: indexList
-                    ,widgets: widgets
-                };
-                return renderPage(config);
-            })
-        .when(
-            function() {
-                log('ok!');
-                // reload();
-            }
-            ,function(err) {
-                log.e('Error', err);
-            }
-        );
+//1 new file
+//2 updating file
+//3 deleting file
 
-    var toBeRendered = [];
-    function recur() {
-        if (toBeRendered.length) {
-            return renderPage(toBeRendered.pop()).when(
-                recur
-            );
+function processPost(req) {
+    var meta;
+    return (function() {
+        var file = Path.basename(req.path);
+        try { meta = parsePost(req.data);
+              meta = parseMetaData(meta.metaStr,
+                                   { teaser: meta.teaser,
+                                     title: file.slice(0, file.lastIndexOf('.'))
+                                   });
+              meta.file = file;
+            
+            } catch(e) { return VOW.broken(e); }
+        if (typeof req.data === 'undefined')  {
+            meta.delete = true;   
         }
-        else return VOW.kept();
-    }
-    return recur();
-    //front page
-    // createPage(config);
+        else if (!meta.delete) {
+            log('data received', req.data);
+            return saveFile(req.path, req.data); 
+        }
+        return VOW.kept();
+    }()).when(
+            function() {
+                log('Rendering site after saving/removing post: ', req.path);
+                try {  processMeta(meta);
+                } catch (e) { return VOW.broken(e); }
+                return render.renderSite();
+            });
+                    
 }
-
 
 //API-----------------------
 function handleRequest(req, res, action) {
@@ -497,31 +291,21 @@ function handleRequest(req, res, action) {
         })
         .when(
             function(someData) {
-                var path = req.path = req.url.query && req.url.query.path;
-                var key;
+                req.path = req.url.query && req.url.query.path;
+                req.data = someData;
                 //only save/remove at valid 'paths'
-                if (!settings.paths.some(function(p) {
-                    var valid = path.indexOf(p + '/') === 0;
-                    if (valid) key = path.slice(p.length+1);
-                    return valid;}))
-                    return VOW.broken('Not a valid path: ' + path);
-                
-                req.meta = parsePost(someData);
-                req.meta = parseMetaData(req.meta.metaStr,
-                                         { teaser: req.meta.teaser,
-                                           // title: file.slice(0, file.lastIndexOf('.')),
-                                           existing: index[key],
-                                           key: key
-                                         });
-                log('data received', someData);
-                return addRemoveFile(path, someData);
-            })
-        .when(
-            function() {
-                log('Rendering site after saving/removing post: ', req.path);
-                processMeta(req.meta);
-                return renderSite();
-                // return VOW.kept();
+                var isValidPath = settings.paths.some(function(p) {
+                    // var valid = req.path.indexOf(p + '/') === 0;
+                    // if (valid) req.key = req.path.slice(p.length+1);
+                    return req.path.indexOf(p + '/') === 0;
+                    // return valid;
+                });
+                //process post if path matches
+                return isValidPath ?
+                    (req.path.indexOf(settings.posts) === 0 ? processPost(req) :
+                     saveFile(req.path, req.data)) :
+                VOW.broken('Not a valid path: ' + req.path);
+                    
             })
         .when(
             function() {
@@ -585,28 +369,39 @@ var defaults = {
     // ** json of posts on server by post ide
     //Also set whether to add precalculated lists
     ,json: { byTag: true, byYearMonth: true, byReverseDate: true }
+    //for keeping track of when first published
+    //can be overridden by adding publishedat metadata
+    ,publishedat: 'publishedat.json'
 
 };
 
 module.exports = {
     init: function init(someSettings) {
         settings = extend(defaults, someSettings);
+        try {
+            publishedat = fs.readJsonSync(Path.join(settings.basePath, settings.publishedat));
+        } catch (e) { publishedat = {}; }
         index = createListing(Path.join(settings.basePath, settings.posts));
-        var unpublished = createListing(Path.join(settings.basePath, settings.posts,
-                                                  settings.unpublished));
-        Object.keys(unpublished).forEach(function(key) {
-            if (index[key]) log._w('Duplicate named post in unpublished!!!'.red, key);
-            index[settings.unpublished + '/' + key] = unpublished[key];
-        });
-        indexList = Object.keys(index)
-            .map(function(k) { return index[k]; });
-        sortIndexListByDate();
+        // var unpublished = createListing(Path.join(settings.basePath, settings.posts,
+        //                                           settings.unpublished));
+        // Object.keys(unpublished).forEach(function(key) {
+        //     unpublished[key].unpublished = true;
+        //     if (index[key])
+        //         log._w('Duplicate named post in unpublished!!!, ignoring'.red, key);
+        //     // else index[Path.join(settings.unpublished, key)] = unpublished[key];
+        //     else index[key] = unpublished[key];
+        // });
+        // indexList = Object.keys(index)
+        //     .map(function(k) { return index[k]; });
+        // sortIndexListByDate();
         // log(indexList);
         log(index);
     },
     save: function(req, res) { handleRequest(req, res, 'save'); },
     remove: function(req, res) { handleRequest(req, res, 'remove'); },
-    render: renderSite
+    render: function() {
+     render.renderSite(index);
+    }
     // ,sendResponse: sendResponse
 
     // ,writeIndexJson: writeIndexJson
@@ -639,21 +434,21 @@ module.exports = {
 // console.log(lorem(3));
 
 // indexList = [
-//     { title: 'Some title', publishedAt: new Date('11/May/2010')  ,tags: ["a", "b", "d"]},
-//     { title: 'What is this about', publishedAt: new Date('20/Oct/2010') ,tags: ["c", "b", "d"]},
-//     { title: 'A very important post', publishedAt: new Date('12/Oct/2010')  ,tags: ["d", "a"]},
-//     { title: 'Oh, I do blabber on', publishedAt: new Date('12/Jan/2011')  ,tags: ["d", "a"]},
-//     { title: 'Now what?', publishedAt: new Date('12/Feb/2012')  ,tags: ["d", "a"]}
+//     { title: 'Some title', publishedat: new Date('11/May/2010')  ,tags: ["a", "b", "d"]},
+//     { title: 'What is this about', publishedat: new Date('20/Oct/2010') ,tags: ["c", "b", "d"]},
+//     { title: 'A very important post', publishedat: new Date('12/Oct/2010')  ,tags: ["d", "a"]},
+//     { title: 'Oh, I do blabber on', publishedat: new Date('12/Jan/2011')  ,tags: ["d", "a"]},
+//     { title: 'Now what?', publishedat: new Date('12/Feb/2012')  ,tags: ["d", "a"]}
 // ];
 
 
 
 // var teaserList = [
-//     { title: 'abc', publishedAt: new Date('11/May/2010')  ,tags: ["a", "b", "d"]},
-//     { title: 'def', publishedAt: new Date('20/Oct/2010') ,tags: ["c", "b", "d"]},
-//     { title: 'ghi', publishedAt: new Date('12/Oct/2010')  ,tags: ["d", "a"]},
-//     { title: 'ghi2', publishedAt: new Date('12/Jan/2011')  ,tags: ["d", "a"]},
-//     { title: 'ghir', publishedAt: new Date('12/Feb/2012')  ,tags: ["d", "a"]}
+//     { title: 'abc', publishedat: new Date('11/May/2010')  ,tags: ["a", "b", "d"]},
+//     { title: 'def', publishedat: new Date('20/Oct/2010') ,tags: ["c", "b", "d"]},
+//     { title: 'ghi', publishedat: new Date('12/Oct/2010')  ,tags: ["d", "a"]},
+//     { title: 'ghi2', publishedat: new Date('12/Jan/2011')  ,tags: ["d", "a"]},
+//     { title: 'ghir', publishedat: new Date('12/Feb/2012')  ,tags: ["d", "a"]}
 // ];
 // indexList.forEach(function(t) {
 //     teasers[t.title] = t.tags.join('-');
