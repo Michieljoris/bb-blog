@@ -107,9 +107,8 @@ module.exports = {
         ,"extend": "*"
         ,"moment": "2.8.x"
         ,"synergipsum": "0.2.x"
-        
-        
-        // "colors": "*",
+        ,"speakingurl": "0.11.x",
+        "colors": "*"
     },
     // What dependencies are useful only for developers?
     // Installed when we `npm install` in our working directory, but not 

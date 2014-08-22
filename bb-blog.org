@@ -64,13 +64,9 @@ Just add disqus script tag to post page
 - Title of post one.html //dynamically discovered by bb-blog
 - Title of post two.html
 - Title of post three.html
-***** unpublished  //path set in init of bb-blog
-- Title of post four.html //dynamically discovered by bb-blog
-- Title of post five.html
-- Title of post six.html
 ** bb-blog uses the above data to produce: 
 *** www  
-latest.html //latest posts page, name set in bb-blog.init
+index.html //latest posts page, name set in bb-blog.init
 archive.html // list in tree form of all posts
 **** post //dir set in recipe
 - Title of post one.html
