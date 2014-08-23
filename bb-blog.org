@@ -40,10 +40,8 @@ group of teasers with links to other pages with more teasers
 always paginate? 
 
 * unpublished posts?
-Make unpublished archive type widget with unpublished posts.
-move posts in and out of unpublished folder.
-configure bb-server not serve from this folder unless authenticated
-
+  just marked as unpublished in their meta, just don't create the pages in www/post
+  for the unpublished posts
 * rebuilding paginated page?
  Just add the teaser to the page, split page when getting too long, also then
  redo page befor and after to update next and previous links
@@ -72,10 +70,6 @@ archive.html // list in tree form of all posts
 - Title of post one.html
 - Title of post two.html
 - Title of post three.html
-***** unpublished  //dir set in bb-blog-init
-- Title of post four.html
-- Title of post five.html
-- Title of post six.html
 **** tag
 ***** tag-one    
 ****** 1
@@ -201,3 +195,12 @@ rebuild relevant month, year, landing
 *** different title, different tags:  
 
 
+    
+* TODO
+** produce year,month,tag pages 
+** add comments
+** filter out unpublished 
+** some kind of automation, edit the site online, then produce js free version and
+push to github.io 
+** add to firstdoor
+** archive page and collapsed archive widget   

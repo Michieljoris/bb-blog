@@ -360,7 +360,7 @@ var defaults = {
         // *** a tag page, paginated, teasers
         // links to other pages when more than one page
         // previous, next, page number, last, first page
-        ,tag: true
+        ,tag: { path: 'tag' }
         // *** a month page, paginated, teasers
         // next/previous month/year
         // links to other pages when more than one page
@@ -379,6 +379,8 @@ var defaults = {
     }
     //recipe used by pages unless specified otherwise
     ,recipe: 'recipe.js'
+    ,from: [ 'fromTemplate', 'mapping', 'main']
+    ,to: [ 'toTemplate', 'out' ]
     // ** json of posts on server by post ide
     //Also set whether to add precalculated lists
     ,json: { byTag: true, byYearMonth: true, byReverseDate: true }
@@ -409,7 +411,8 @@ module.exports = {
         // settings = myExtend(defaults, someSettings, true);
         
         settings = extend(true, defaults, someSettings);
-        log(util.inspect(settings, { depth:10, colors:true }));
+        // log(util.inspect(settings, { depth:10, colors:true }));
+        // log('someSettings', util.inspect(someSettings, { depth:10, colors:true }));
         try {
             publishedat = fs.readJsonSync(Path.join(settings.paths.base, settings.publishedat));
         } catch (e) { publishedat = {}; }
