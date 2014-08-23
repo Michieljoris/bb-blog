@@ -1,12 +1,6 @@
 var Path = require('path');
 var log = require('logthis').logger._create(Path.basename(__filename));
   
-var settings;
-var indexList;
-var teasers = {};
-var recipes = {};
-var widgets;
-  
 var VOW = require('dougs_vow');
 var moment = require('moment');
 var fs = require('fs-extra');
@@ -14,10 +8,16 @@ var util = require('util');
 var htmlBuilder = require('html-builder').build;
 
 var webSocketConnection = require('./server-connection');
+
+var settings;
+var postList;
+var recipes = {};
+
+var widgets;
   
 function groupByTag(filterAttr) {
     var tags = {};
-    indexList
+    postList
         .filter(function(p) {
             return !filterAttr || p[filterAttr];
         })
@@ -33,7 +33,7 @@ function groupByTag(filterAttr) {
 
 function groupByYearMonth(filterAttr) {
     var archive = {};
-    indexList
+    postList
         .filter(function(p) {
             return !filterAttr || p[filterAttr];
         })
@@ -91,8 +91,9 @@ function evalFile(fileName) {
         }
 }
   
+
 function sortIndexListByDate() {
-    indexList.sort(function compare(p1, p2) {
+    postList.sort(function compare(p1, p2) {
         var a = p1.publishedat;
         var b = p2.publishedat;
         if (a > b)
@@ -108,7 +109,7 @@ function recentPartial(options, filterAttr) {
     if (!options) return null;
     var n = options.max;
     var partial = '<ul id="most-recent-partial">\n' +
-        indexList
+        postList
         .filter(function(p) {
             return !filterAttr || p[filterAttr];
         })
@@ -127,7 +128,7 @@ function recentPartial(options, filterAttr) {
 
 function url(link, text) {
     
-    return '<a  href="' + link + '" >'  + (text || link) + '</a>';
+    return '<a  href="/' + link + '" >'  + (text || link) + '</a>';
 }
 
 // function folder(name) {
@@ -145,7 +146,8 @@ function archivePartial(options) {
                 Object.keys(archive[y]).map(function(m) {
                     return '   <li>' + url(y + '/' + m, month[m]) + '\n' + '    <ul>\n' +
                         archive[y][m].map(function(p) {
-                            var path = Path.join(settings.wwwPosts || 'post', p.slug);
+                            var path = Path.join(settings.wwwPosts || 'post',
+                                                 p.slug + '.html');
                             return '     <li>' + url(path, p.title) + '</li>';
                         }).join('\n') +
                         '\n    </ul>\n   </li>';
@@ -188,29 +190,87 @@ function tagPartial(options) {
     return partial;
 }
 
-function renderPage(config) {
-    var recipe = recipes[config.recipe] = recipes[config.recipe] ||
-        evalFile(Path.join(settings.paths.base, config.recipe));
-    //Set ids, but only if the the widget id already exists and there is a
-    //widget for it:
-    Object.keys(recipe.partials.ids).forEach(function(id) {
-        if (config.widgets[id]) {
-            recipe.partials.ids[id] = config.widgets[id];
-        }
-        recipe.partials.ids.main = config.main;
-        
-    });
-
-    log(util.inspect(recipe.partials.ids, {colors:true, depth:10}));
-    return htmlBuilder(recipe);
+function getObject(obj, path) {
+    var prop = path.shift();
+    if (!path.length) return obj[prop];
+    else return getObject(obj[prop], path);
 }
 
-function renderSite(index, someSettings, old, file) {
-    settings = someSettings;
-    indexList = Object.keys(index).map(function(k) { return index[k]; });
+// console.log(getObject({ a: { b: { c: 123}}}, ['a','b','cc', 'd']));
+
+// function renderPage(config) {
+    // var recipe = recipes[config.recipe] = recipes[config.recipe] ||
+    //     evalFile(Path.join(settings.paths.base, config.recipe));
+    //Set ids, but only if the the widget id already exists and there is a
+    //widget for it:
+    // var recipe = config.recipe;
+    // Object.keys(recipe.partials.ids).forEach(function(id) {
+    //     if (config.widgets[id]) {
+    //         recipe.partials.ids[id] = config.widgets[id];
+    //     }
+    //     recipe.partials.ids.main = config.main;
+        
+    // });
+
+    // log(util.inspect(recipe.partials.ids, {colors:true, depth:10}));
+    // if (config.file) {
+    //     var meta = posts[config.file];
+        // try { source = getObject(recipe, config.source);
+        //       target = getObject(recipe, config.target);
+              
+            
+        //     } catch(e) {
+        //     throw Error({ msg: 'Error in rendering page ' + meta.title, err: e });
+        // }
+        
+        
+    // }
+//     return htmlBuilder(config());
+// }
+var Recipe;
+var prepareRecipe = {
+    post: function preparePostRecipe() {
+        var recipeName = settings.pages.post.recipe || settings.recipe;
+        var from, to, fromObj, toObj, fromProp, toProp;
+        var recipe = evalFile(Path.join(settings.paths.base, recipeName));
+        Recipe = recipe;
+        from = settings.pages.post.from;
+        to = settings.pages.post.to;
+        // log(from);
+        // log(to);
+        try { fromObj = getObject(recipe, from.slice(0, from.length));
+              toObj = getObject(recipe, to.slice(0, to.length));
+            } catch(e) {
+                throw Error({ msg: 'Error in preparing post recipe' , err: e });
+            }
+        fromObj= getObject(recipe, from.slice(0, from.length-1));
+        fromProp= from[from.length-1];
+        toObj= getObject(recipe, to.slice(0, to.length-1));
+        toProp= to[to.length-1];
+        log(fromObj, fromProp, toObj, toProp);
+        
+        return {
+            setWidgets: function(widgets) {
+                Object.keys(widgets).forEach(function(id) {
+                        recipe.partials.ids[id] = widgets[id];
+                });
+                return recipe;
+            },
+            customize: function(from, to) {
+                fromObj[fromProp] = from;
+                toObj[toProp] = to;
+                // log(fromObj, toObj);
+                return recipe;
+            }
+        };
+    }
+
+}
+function renderSite(posts, old, file) {
+    postList = Object.keys(posts).map(function(k) { return posts[k]; });
     sortIndexListByDate();
     
-    log('rendering site', file, indexList);
+    log('rendering site', file, postList);
     var widgets;
     if (settings.widgets)
         try {
@@ -225,36 +285,55 @@ function renderSite(index, someSettings, old, file) {
     
     if (!settings.pages) return VOW.kept();
     
-    var toBeRendered = [];
+    var toBeBuilt = []; 
     
-    Object.keys(settings.pages)
-        .filter(function(page) {
-            return settings.pages[page];
-        })
-        .forEach(function(page) {
-            var config = settings.pages[page];
-            if (typeof config === 'boolean') config = {};
-            if (page === 'landing') {
-                toBeRendered.push({
-                    recipe: config.recipe || settings.recipe,
-                    widgets: widgets || {},
-                    main: 'hello'
-                });
+    //POST page(s), TODO do only 'file' if file is defined and 
+    //otherwise do all:
+    recipes.post.setWidgets(widgets);
+    var list = file ? [posts[file]] : postList;
+    list.forEach(function(meta) {
+        toBeBuilt.push(
+            function() {
+                return recipes.post.customize(
+                    Path.join(settings.paths.posts, meta.file),
+                    Path.join(settings.paths.www, settings.paths.wwwPosts, 
+                              meta.slug + '.html'));
             }
-        });
+        );
+    });
     
+    
+    // log(util.inspect(Recipe, { depth:10, colors:true }));
     function recur() {
-        if (toBeRendered.length) {
-            return renderPage(toBeRendered.pop()).when(
+        if (toBeBuilt.length) {
+            var recipe = (toBeBuilt.pop())();
+            return htmlBuilder(recipe).when(
                 recur
             );
         }
-        else return VOW.kept();
+        else {
+            // log(util.inspect(Recipe, { depth:10, colors:true }));
+            return VOW.kept();
+        }
     };
-    return recur();
+    var result =  recur();
+    return result;
     
 }
   
 module.exports = {
+    init: function(someSettings) {
+        settings = someSettings;
+        
+        Object.keys(settings.pages)
+            .filter(function(page) {
+                return settings.pages[page];
+            })
+            .forEach(function(page) {
+                if (prepareRecipe[page])
+                    recipes[page] = prepareRecipe[page]();
+            });
+    
+    },
     renderSite: renderSite
 };

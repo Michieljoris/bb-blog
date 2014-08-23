@@ -242,7 +242,7 @@ function processMeta(meta) {
         publishedat[meta.file] = new Date();
     // title
     meta.title = meta.title || meta.file.slice(0, meta.file.lastIndexOf('.'));
-    meta.slug = sluggify(meta.title);
+    // meta.slug = sluggify(meta.title);
     meta.publishedat = meta.publishedat || publishedat[meta.file];
     meta.createdAt = index[meta.file] ? index[meta.file].createdAt : new Date();
 }
@@ -280,7 +280,7 @@ function processPost(req) {
                        var old = index[meta.file];
                        index[meta.file] = meta;
                     } catch (e) { return VOW.broken(e); }
-                return render.renderSite(index, settings, old, file);
+                return render.renderSite(index, old, file);
             });
                     
 }
@@ -301,7 +301,7 @@ function handleRequest(req, res, action) {
             function(someData) {
                 req.path = req.url.query && req.url.query.path;
                 if (!req.path && ! req.someData)
-                    return render.renderSite(index, settings);
+                    return render.renderSite(index);
                 req.data = someData;
                 //only save/remove at valid 'paths'
                 var isValidPath = settings.writable.some(function(p) {
@@ -406,14 +406,16 @@ function myExtend(a, b) {
 
 module.exports = {
     init: function init(someSettings) {
-        settings = myExtend(defaults, someSettings, true);
-        log(settings);
+        // settings = myExtend(defaults, someSettings, true);
+        
+        settings = extend(true, defaults, someSettings);
+        log(util.inspect(settings, { depth:10, colors:true }));
         try {
             publishedat = fs.readJsonSync(Path.join(settings.paths.base, settings.publishedat));
         } catch (e) { publishedat = {}; }
         index = createIndex(Path.join(settings.paths.base, settings.paths.posts));
-        log(index);
-        
+        log(util.inspect(index, { depth:10, colors:true }));
+        render.init(settings);
     },
     save: function(req, res) { handleRequest(req, res, 'save'); },
     remove: function(req, res) { handleRequest(req, res, 'remove'); },
