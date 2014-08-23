@@ -39,19 +39,19 @@ function groupByYearMonth(postList, filterAttr) {
             return !filterAttr || p[filterAttr];
         })
         .forEach(function(p) {
-            if (p.publishedat) {
-                var m = moment(p.publishedat);
+            // if (p.publishedat) {
+                var m = moment(p.publishedat || new Date());
                 var year = m.year();
                 var month = m.month();
                 archive[year] = archive[year] || {};
                 archive[year][month] = archive[year][month] || [];
                 archive[year][month].unshift(p);
-            }
+            // }
         });
     return archive;
 }
-var month = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July',
-              'Augustus', 'September', 'October', 'November', 'December'];
+var monthByName = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July',
+              'August', 'September', 'October', 'November', 'December'];
 
 
 function postIterator(posts, n) {
@@ -137,7 +137,7 @@ function archivePartial(archive, options) {
         Object.keys(archive).map(function(y) {
             return ' <li>' + url(y) + '\n' + '  <ul>\n' +
                 Object.keys(archive[y]).map(function(m) {
-                    return '   <li>' + url(y + '/' + month[m], month[m]) + '\n' + '    <ul>\n' +
+                    return '   <li>' + url(y + '/' + monthByName[m], monthByName[m]) + '\n' + '    <ul>\n' +
                         archive[y][m].map(function(p) {
                             var path = Path.join(settings.wwwPosts || 'post',
                                                  p.slug + '.html');
@@ -243,7 +243,20 @@ var recipePreparers = {
     }
     ,landing : prepareRecipe
     ,tag : prepareRecipe
+    ,year : prepareRecipe
+    ,month : prepareRecipe
 };
+
+function pageNav(n, i) {
+    if (n === 1) return '';
+    
+    // var html =  "<div id='page-nav'>" +  Previous Next Last" + "</div>";
+    // '<nav id="page-nav">'
+    //       '<a class="extend prev" href="/hexo-theme-landscape/">« Prev</a><a class="page-number" href="/hexo-theme-landscape/">1</a><span class="page-number current">2</span><a class="page-number" href="/hexo-theme-landscape/page/3/">3</a><a class="extend next" href="/hexo-theme-landscape/page/3/">Next »</a>
+    //     </nav>
+    
+}
+
 
 function addPages(pageType, pageTitle, subpages, basePath) {
     log('-------------- adding subpages for ' + pageTitle);
@@ -254,8 +267,10 @@ function addPages(pageType, pageTitle, subpages, basePath) {
                 //TODO add first,prev,next,last links to 'page'
                 var path = i === 0 ?
                     Path.join(basePath, 'index.html') :
-                    Path.join(basePath, '' + i, 'index.html');
-                return recipes[pageType].customize(pageTitle + i,
+                    Path.join(basePath, 'page' + (i+1), 'index.html');
+                var pageNumber = i === 0 ? '' : '/' + (i+1);
+                page += pageNav(subpages.length, i);
+                return recipes[pageType].customize(pageTitle + pageNumber,
                                                    page, path);
             }
         );
@@ -322,23 +337,32 @@ function renderSite(posts, old, file) {
         Object.keys(tags).forEach(function(tag) {
             var subPages = pagedTeasers(tags[tag], settings.pagination);
             var basePath = settings.pages.tag.path || '';
-            // log('------------', pageType, basePath);
-            // basePath = basePath ?
             basePath = Path.join(settings.paths.www, basePath, tag);
-            // Path.join(settings.paths.www, tag);
             toBeBuilt = toBeBuilt.concat(addPages('tag', tag, subPages, basePath));
         });
         // subPages = pagedTeasers(postList, settings.pagination);
     }
 
-    //YEAR page(s)
+    //YEAR and MONTH page(s)
     if (recipes.year){
-
-    }
-
-    //MONTH page(s)
-    if (recipes.month) {
-        
+        Object.keys(archive).forEach(function(year) {
+            var postsByYear = [];
+            Object.keys(archive[year]).forEach(function(month) {
+                log(year, month, archive);
+                var postsByMonth = archive[year][month];
+                log(postsByMonth.length);
+                var subPages = pagedTeasers(postsByMonth, settings.pagination);
+                var basePath = settings.pages.month.path || '';
+                basePath = Path.join(settings.paths.www, basePath, year, monthByName[month]);
+                toBeBuilt = toBeBuilt.concat(addPages('month', monthByName[month] ,
+                                                      subPages, basePath));
+                postsByYear = postsByYear.concat(archive[year][month]);
+            });    
+            var subPages = pagedTeasers(postsByYear, settings.pagination);
+            var basePath = settings.pages.year.path || '';
+            basePath = Path.join(settings.paths.www, basePath, year);
+            toBeBuilt = toBeBuilt.concat(addPages('year', year, subPages, basePath));
+        });
     }
 
     //ARCHIVE page

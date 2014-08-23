@@ -353,6 +353,10 @@ var defaults = {
     ,widgets: {
         recent: { max: 3, save: false } ,archive: { save: false } ,tag: { max: 3 }
     }
+    //override individual settings of all posts
+    ,enableCommentsPerPost: true
+    ,comments: true
+    
     ,pages: {
         // *** an list page, just a list in tree form, by year/month
         // archive: { recipe: 'some archive recipe' }
