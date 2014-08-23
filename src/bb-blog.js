@@ -339,8 +339,6 @@ var defaults = {
         www: 'www',
         //path where teasers are found, relative to www
         teasers: 'teaser',
-        //path where posts are found, relative to www
-        wwwPosts: 'post',
         //path where widgets are found, relative to www
         widgets: 'widget'
     }
@@ -379,7 +377,7 @@ var defaults = {
         // *** a landing page with all posts (paginated)
         ,landing: true
         // *** a page with the post
-        ,post: true
+        ,post: { path: 'post' }
     }
     //recipe used by pages unless specified otherwise
     ,recipe: 'recipe.js'

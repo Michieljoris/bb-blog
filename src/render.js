@@ -6,6 +6,7 @@ var util = require('util');
 var VOW = require('dougs_vow');
 var moment = require('moment');
 var fs = require('fs-extra');
+var extend = require('extend');
 var htmlBuilder = require('html-builder').build;
 
 // var webSocketConnection = require('./server-connection');
@@ -73,8 +74,8 @@ function pagedTeasers(posts, n) {
     var pages = [];
     pagedPosts.forEach(function(posts) {
         var page = posts.map(function(post) {
-            var path = Path.join(settings.paths.wwwPosts, post.slug + '.html');
-            return '<div class="teaser">\n' + '<h2>' + post.title + '</h2>\n' + post.teaser +
+            var path = Path.join(settings.pages.post.path, post.slug + '.html');
+            return '<div class="box teaser">\n' + '<h2>' + post.title + '</h2>\n' + post.teaser +
                 '\n<span class="more"><a href="/' + path + '">More</a></span>\n</div>';
         }).join('\n');
         pages.push(page);
@@ -115,7 +116,7 @@ function recentPartial(postList, options, filterAttr) {
             return !filterAttr || p[filterAttr];
         })
         .slice(0,n).map(function(p) {
-            var path = Path.join(settings.wwwPosts || 'post', p.slug + '.html');
+            var path = Path.join(settings.pages.post.path || 'post', p.slug + '.html');
             return '  <li>' + '<a href="/' + path + '">' + p.title + '</a></li>';
         }).join('\n') +
         '\n</ul>';
@@ -139,7 +140,7 @@ function archivePartial(archive, options) {
                 Object.keys(archive[y]).map(function(m) {
                     return '   <li>' + url(y + '/' + monthByName[m], monthByName[m]) + '\n' + '    <ul>\n' +
                         archive[y][m].map(function(p) {
-                            var path = Path.join(settings.wwwPosts || 'post',
+                            var path = Path.join(settings.pages.post.path || 'post',
                                                  p.slug + '.html');
                             return '     <li>' + url(path, p.title) + '</li>';
                         }).join('\n') +
@@ -219,10 +220,13 @@ function fetchRecipe(page) {
             if (from) fromObj[fromProp] = from;
             if (to) toObj[toProp] = to;
             recipe.partials.ids.pageTitle = title;
-            // log(fromObj, toObj);
             return recipe;
-            }
+            },
+        getFromObj: function() {
+            return fromObj;
+        }
         };
+    
 }
 
 function prepareRecipe() {
@@ -240,6 +244,7 @@ function prepareRecipe() {
 var recipePreparers = {
     post: function preparePostRecipe() {
         return fetchRecipe("post");
+        
     }
     ,landing : prepareRecipe
     ,tag : prepareRecipe
@@ -247,35 +252,102 @@ var recipePreparers = {
     ,month : prepareRecipe
 };
 
-function pageNav(n, i) {
-    if (n === 1) return '';
-    
-    // var html =  "<div id='page-nav'>" +  Previous Next Last" + "</div>";
-    // '<nav id="page-nav">'
-    //       '<a class="extend prev" href="/hexo-theme-landscape/">« Prev</a><a class="page-number" href="/hexo-theme-landscape/">1</a><span class="page-number current">2</span><a class="page-number" href="/hexo-theme-landscape/page/3/">3</a><a class="extend next" href="/hexo-theme-landscape/page/3/">Next »</a>
-    //     </nav>
-    
+function stringifyHtml(obj) {
+    function attr(obj) {
+        return Object.keys(obj).map(function(key) {
+            return key + '="' + obj[key] + '"';
+        }).join(' ');
+    }
+    function tag(indent, obj) {
+        if (typeof obj !== 'object') return obj; //just don't pass an array..
+        var inner = obj.inner || '';
+        var t = obj.tag;
+        var str =  indent + '<' + t + ' ';
+        var lf = '\n';
+        if (!util.isArray(inner)) { inner = [inner];
+                                    lf = '';  }
+        inner = inner.map(function(el) {
+            return tag(indent + '  ', el);
+        }).join('\n');
+        delete obj.tag; delete obj.inner;
+        return  str + attr(obj) + '>' + lf + indent + inner + lf + indent + '</' + t + '>';
+    }
+    var indent = '';
+    return tag(indent, obj); 
 }
 
 
+function pageNav(basePath, n, c) {
+    basePath = basePath.slice(settings.paths.www.length) || '/';
+    if (n <= 1) return '';
+    var html = { tag: 'nav', id: 'page-nav',
+                 inner: (function() {
+                     var links =  [];
+                     var prevLink = 
+                         {tag: 'a', "class":"extend prev", href: basePath, inner: "« Prev" };
+                     if (c+1 !== 1) links.push(prevLink);
+                     var link = { tag: 'a', "class":"page-number", href: basePath,
+                                  inner: '' };
+                     var span = { tag: 'span', 'class': 'page-number current', inner: c+1 };
+                     for (var i=1; i<=n; i++) {
+                         var newLink = extend(true, {}, link);
+                         newLink.href = Path.join(basePath, i>1 ? 'page' + i: '');
+                         newLink.inner = i;
+                         links.push( c+1 === i ? span: newLink);
+                     }
+                     var nextLink = { tag: 'a', "class":"extend next",
+                                      href: Path.join(basePath, 'page'+n),
+                                      inner: "Next »" };
+                     if (c+1 !== n) links.push(nextLink);
+                     return links;
+                 })()
+               };
+    return stringifyHtml(html);
+}
+
+// console.log(pageNav('basepath', 4, 2));
+
 function addPages(pageType, pageTitle, subpages, basePath) {
-    log('-------------- adding subpages for ' + pageTitle);
     var toBeBuilt = [];
     subpages.forEach(function(page, i) {
         toBeBuilt.push(
             function() {
-                //TODO add first,prev,next,last links to 'page'
                 var path = i === 0 ?
                     Path.join(basePath, 'index.html') :
                     Path.join(basePath, 'page' + (i+1), 'index.html');
                 var pageNumber = i === 0 ? '' : '/' + (i+1);
-                page += pageNav(subpages.length, i);
+                page += pageNav(basePath, subpages.length, i);
                 return recipes[pageType].customize(pageTitle + pageNumber,
                                                    page, path);
             }
         );
     });
     return toBeBuilt;
+}
+
+// <header>
+//   <div class="icon"></div>
+//   <time datetime="2014-06-02T12:33:28.000Z">
+//     <a href="/Meteor,-docs-and-attached-files/">Jun 2 2014</a></time>
+//   <h1 class="title"><a href="/Meteor,-docs-and-attached-files/"> Meteor, docs and attached files</a></h1>
+// </header>
+
+function postHeader(meta) {
+    // var href = meta.slug + '.html';
+    var datetime = moment(meta.publishedat).format('Do of MMMM YYYY');
+    var html = { tag:"header",
+               inner: [
+                   { tag: 'h1', 'class':'title',
+                     inner: meta.title },
+                   { tag: 'time', datetime:datetime, inner: datetime }
+                     // inner: [
+                     //     {tag: 'a', href:href, inner:'Jan 1 1970'}
+                     // ]}
+                     // inner: [
+                         // {tag: 'a', href:href, inner: meta.title}
+                     // ]}
+               ]};
+    return stringifyHtml(html);
 }
 
 function renderSite(posts, old, file) {
@@ -314,11 +386,22 @@ function renderSite(posts, old, file) {
         list.forEach(function(meta) {
             toBeBuilt.push(
                 function() {
+                    var fromObj = recipes.post.getFromObj();
+                    if ((!settings.enableCommentsPerPost && !settings.comments) ||
+                        (settings.enableCommentsPerPost && !meta.comments)) {
+                        log(meta, '--------------------------------------');
+                        delete fromObj['disqus-embed'];
+                        delete fromObj['disqus-count'];
+                    }
+                    else {
+                        fromObj['disqus-embed'] = 'html/disqus-embed.html';
+                        fromObj['disqus-count'] = 'html/disqus-count.html';
+                    }
                     return recipes.post.customize(
                         Path.join(settings.paths.posts, meta.file),
-                        Path.join(settings.paths.www, settings.paths.wwwPosts,
+                        Path.join(settings.paths.www, settings.pages.post.path || 'post', 
                                   meta.slug + '.html'),
-                        meta.title);
+                        postHeader(meta));
                 }
             );
         });
@@ -389,6 +472,9 @@ function renderSite(posts, old, file) {
 module.exports = {
     init: function(someSettings) {
         settings = someSettings;
+        
+        if (typeof settings.pages.post === 'boolean')
+            settings.pages.post = { path: 'post' };
         recipes = {};
         recipeCache = {};
 

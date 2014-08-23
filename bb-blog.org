@@ -198,14 +198,19 @@ rebuild relevant month, year, landing
     
 * TODO
 ** add new page
-** add comments
 ** filter out unpublished 
+   
 ** some kind of automation, edit the site online, then produce js free version and
 push to github.io 
-** add to firstdoor
-** create archive page and collapsed archive widget   
-** produces json   
-** next/prev/last/first nav links on teaser pages 
+** produce json   
 ** enable authentication using persona
 ** style ala current axion5.net   
-** add date to post   
+** search
+   
+** add to firstdoor
+** DONE add date to post   
+** DONE add comments
+** DONE next/prev/last/first nav links on teaser pages 
+   
+   
+** create archive page and collapsed archive widget   
