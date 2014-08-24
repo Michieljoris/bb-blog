@@ -227,6 +227,7 @@ function writeIndexJson(dir, fileName, data, outDir) {
     return vow.promise;
 }
 
+
 function processMeta(meta) {
     var old = posts[meta.file];
     log(meta);
