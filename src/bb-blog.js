@@ -316,8 +316,10 @@ function processPost(req) {
                 meta._all = true;
             }
             //make sure any new posts or retitled posts are have unique titles:
-            if ((req.new || (posts[file] && posts[file].title !== meta.title) &&
-                 !isUniqueSlug(meta.slug))) return VOW.broken({
+            if (
+                (req.new || (posts[file] && posts[file].title !== meta.title)) &&
+                    !isUniqueSlug(meta.slug)
+            ) return VOW.broken({
                      msg: 'The title does not generate a unique url for the post'});
                  else return saveFile(req.path, req.data); 
                 }
@@ -431,7 +433,8 @@ var defaults = {
         ,post: { path: 'post' }
     }
     //recipe used by pages unless specified otherwise
-    ,recipe: 'recipe.js'
+    // ,recipe: 'recipe.js'
+    ,recipe: { editable: 'recipe.js', nojs: 'recipe.js' }
     ,from: [ 'fromTemplate', 'mapping', 'main']
     ,to: [ 'toTemplate', 'out' ]
     // ** json of posts on server by post ide
@@ -440,6 +443,7 @@ var defaults = {
     //for keeping track of when first published
     //can be overridden by adding publishedat metadata
     ,publishedat: 'publishedat.json'
+    ,defaultRenderMode: 'editable'
 
 };
 

@@ -198,21 +198,32 @@ rebuild relevant month, year, landing
     
 * TODO
 ** filter out unpublished 
+** add to firstdoor
    
-** some kind of automation, edit the site online, then produce js free version and
-push to github.io 
 ** produce json   
+   
+** markdown editor
+** embedded images
+** code highlighing
+** add editable pages to blog  
+** some kind of automation, edit the site online, then produce js free version and
+push to github.io, using my commit.js file, just add ssh key to server I think
+serve blog from linode
+enable persona authentication
+add upload button:
+  gives render command to bb-blog in the nodejs mode
+  then syncs the www-nojs directory to github.michieljoris.io
 ** enable authentication using persona
+** use delete button?? 
 ** style ala current axion5.net   
 ** search
 ** proper error reporting:
 Letting the user know what happened when something went wrong!!!
    
-** add to firstdoor
-** setting meta title for browser history and backward/forward buttons
 ** calculate proper teasers for posts, not just all or nothing if no teaser break is found
   in bb-blog.js/retrieveTeaser 
 ** create archive page and collapsed archive widget   
+** DONE setting meta title for browser history and backward/forward buttons
 ** DONE unique posts!!!
 Don't overwrite old posts when creating new posts or renaming them
 When saving post, check for uniques of 'file' first, if not unique add number

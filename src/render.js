@@ -112,6 +112,8 @@ function recentPartial(postList, options, filterAttr) {
     var n = options.max;
     var partial = '<ul id="most-recent-partial">\n' +
         postList
+        .slice()
+        .reverse()
         .filter(function(p) {
             return !filterAttr || p[filterAttr];
         })
@@ -197,10 +199,15 @@ function setWidgets(recipe, widgets) {
     });
     return recipe;
 }
-
+        // settings.pages[page].recipe[settings.renderMode] ||
+        // settings.pages[page].recipe ||
+        // settings.recipe[settings.renderMode] || settings.recipe;
 function fetchRecipe(page) {
-    var recipeName = settings.pages[page].recipe || settings.recipe;
-        var from, to, fromObj, toObj, fromProp, toProp;
+    var recipeName = //settings.pages[page].recipe || settings.recipe;
+    (settings.pages[page].recipe && settings.pages[page].recipe[settings.renderMode]) ||
+        settings.pages[page].recipe ||
+        settings.recipe[settings.renderMode] || settings.recipe;
+    var from, to, fromObj, toObj, fromProp, toProp;
     var recipe = recipeCache[recipeName] = recipeCache[recipeName] ||
         evalFile(Path.join(settings.paths.base, recipeName));
     from = settings.pages[page].from || settings.from;
@@ -223,29 +230,41 @@ function fetchRecipe(page) {
             if (to) toObj[toProp] = to;
             recipe.partials.ids.pageTitle = title;
             return recipe;
-            },
+        },
         getFromObj: function() {
             return fromObj;
         }
-        };
+    };
     
 }
 
 function prepareRecipe() {
-        var recipe =  fetchRecipe("landing");
-        var customize = recipe.customize;
-        recipe.customize = function(title, main, to) {
-           var recipe = customize(null, to, title);
-            recipe.partials.ids.main = main;
-            return recipe;
-        };
-        // log(util.inspect(recipe.get(), { depth:10, colors:true }));
+    var recipe =  fetchRecipe("landing");
+    var customize = recipe.customize;
+    recipe.customize = function(title, main, to) {
+        var recipe = customize(null, to, title);
+        recipe.partials.ids.main = main;
+        recipe.partials.ids['meta-page-title'] =
+            '<title>' + (settings.siteTitle || 'blog') + '-' + 
+            title + '</title>;';
         return recipe;
-    }
+    };
+    // log(util.inspect(recipe.get(), { depth:10, colors:true }));
+    return recipe;
+}
 
 var recipePreparers = {
     post: function preparePostRecipe() {
-        return fetchRecipe("post");
+        var recipe =  fetchRecipe("post");
+        var customize = recipe.customize;
+        recipe.customize = function(from, to, meta) {
+            var recipe = customize(from, to, postHeader(meta));
+            recipe.partials.ids['meta-page-title'] =
+                '<title>' + (settings.siteTitle || 'blog') + '-' + 
+                meta.title + '</title>;';
+            return recipe;
+        };
+        return recipe;
         
     }
     ,landing : prepareRecipe
@@ -284,8 +303,10 @@ function pageNav(basePath, n, c) {
     var html = { tag: 'nav', id: 'page-nav',
                  inner: (function() {
                      var links =  [];
+                     var prevLinkHref = Path.join(basePath, c>1 ? 'page' + c: '');
                      var prevLink = 
-                         {tag: 'a', "class":"extend prev", href: basePath, inner: "« Prev" };
+                         {tag: 'a', "class":"extend prev", href: prevLinkHref,
+                          inner: "« Prev" };
                      if (c+1 !== 1) links.push(prevLink);
                      var link = { tag: 'a', "class":"page-number", href: basePath,
                                   inner: '' };
@@ -296,8 +317,9 @@ function pageNav(basePath, n, c) {
                          newLink.inner = i;
                          links.push( c+1 === i ? span: newLink);
                      }
+                     var nextLinkHref = Path.join(basePath, '' + 'page' +(c+2));
                      var nextLink = { tag: 'a', "class":"extend next",
-                                      href: Path.join(basePath, 'page'+n),
+                                      href: nextLinkHref,
                                       inner: "Next »" };
                      if (c+1 !== n) links.push(nextLink);
                      return links;
@@ -408,7 +430,9 @@ function renderSite(posts,  file) {
                         Path.join(settings.paths.posts, meta.file),
                         Path.join(settings.paths.www, settings.pages.post.path || 'post', 
                                   meta.slug + '.html'),
-                        postHeader(meta));
+                        meta
+                        // postHeader(meta)
+                    );
                 }
             );
         });
