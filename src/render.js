@@ -134,11 +134,13 @@ function url(link, text) {
 
 function archivePartial(archive, options) {
     if (!options) return null;
+    var basePath = settings.pages.archive.path || 'archive';
     var partial = '<ul class="css-treeview" id="archive-partial">\n' +
         Object.keys(archive).map(function(y) {
-            return ' <li>' + url(y) + '\n' + '  <ul>\n' +
+            return ' <li>' + url(Path.join(basePath, y), y) + '\n' + '  <ul>\n' +
                 Object.keys(archive[y]).map(function(m) {
-                    return '   <li>' + url(y + '/' + monthByName[m], monthByName[m]) + '\n' + '    <ul>\n' +
+                    return '   <li>' + url(Path.join(basePath, y + '/' + monthByName[m]),
+                                           monthByName[m]) + '\n' + '    <ul>\n' +
                         archive[y][m].map(function(p) {
                             var path = Path.join(settings.pages.post.path || 'post',
                                                  p.slug + '.html');
@@ -248,8 +250,7 @@ var recipePreparers = {
     }
     ,landing : prepareRecipe
     ,tag : prepareRecipe
-    ,year : prepareRecipe
-    ,month : prepareRecipe
+    ,archive : prepareRecipe
 };
 
 function stringifyHtml(obj) {
@@ -350,9 +351,9 @@ function postHeader(meta) {
     return stringifyHtml(html);
 }
 
-function renderSite(posts, old, file) {
+function renderSite(posts,  file) {
     var postList = Object.keys(posts).map(function(k) { return posts[k]; });
-    log('rendering site', file, postList);
+    log('rendering site', file, posts[file], postList);
     
     var archive = groupByYearMonth(postList);
     var tags = groupByTag(postList);
@@ -381,8 +382,14 @@ function renderSite(posts, old, file) {
 
     //POST page(s),
     if (recipes.post) {
-        var list = file && posts[file].title === old.title ?
-            [posts[file]] : postList;
+        //don't regenerate all posts if only one post has been updated, but do so
+        //in the case of a new file, deleted file or changed title, since it
+        //changes the widgets on the other posts.
+        var list = postList;
+        if (file) {
+            if (posts[file]._all) delete posts[file]._all;
+            else list = [posts[file]];
+        }
         list.forEach(function(meta) {
             toBeBuilt.push(
                 function() {
@@ -407,51 +414,58 @@ function renderSite(posts, old, file) {
         });
     }
 
+    var basePath;
     var subPages;
     //LANDING page(s)
     if (recipes.landing) {
+        //TODO remove all the dirs that are just a number, as in they might be stale
+        //never remove www/index.html, since it is the landing page.
+        //even better generate an empty landing index.html page even when there no posts
         subPages = pagedTeasers(postList, settings.pagination);
-        var basePath = settings.paths.www;
+        basePath = settings.paths.www || 'www';
         toBeBuilt = toBeBuilt.concat(addPages("landing", 'Latest', subPages, basePath));
     }
 
     //TAG page(s)
     if (recipes.tag) {
+        if (settings.pages.tag.path)
+            fs.removeSync(Path.join(settings.paths.www, settings.pages.tag.path));
+        basePath = settings.pages.tag.path || 'tag';
         Object.keys(tags).forEach(function(tag) {
             var subPages = pagedTeasers(tags[tag], settings.pagination);
-            var basePath = settings.pages.tag.path || '';
-            basePath = Path.join(settings.paths.www, basePath, tag);
-            toBeBuilt = toBeBuilt.concat(addPages('tag', tag, subPages, basePath));
+            var outPath = Path.join(settings.paths.www, basePath, tag);
+            toBeBuilt = toBeBuilt.concat(addPages('tag', tag, subPages, outPath));
         });
         // subPages = pagedTeasers(postList, settings.pagination);
     }
 
     //YEAR and MONTH page(s)
-    if (recipes.year){
+    if (recipes.archive){
+        if (settings.pages.archive.path)
+            fs.removeSync(Path.join(settings.paths.www, settings.pages.archive.path));
+        basePath = settings.pages.archive.path || 'archive';
         Object.keys(archive).forEach(function(year) {
             var postsByYear = [];
             Object.keys(archive[year]).forEach(function(month) {
                 log(year, month, archive);
                 var postsByMonth = archive[year][month];
-                log(postsByMonth.length);
                 var subPages = pagedTeasers(postsByMonth, settings.pagination);
-                var basePath = settings.pages.month.path || '';
-                basePath = Path.join(settings.paths.www, basePath, year, monthByName[month]);
-                toBeBuilt = toBeBuilt.concat(addPages('month', monthByName[month] ,
-                                                      subPages, basePath));
+                var outPath = Path.join(settings.paths.www, basePath,
+                                        year, monthByName[month]);
+                toBeBuilt = toBeBuilt.concat(addPages('archive', monthByName[month] ,
+                                                      subPages, outPath));
                 postsByYear = postsByYear.concat(archive[year][month]);
             });    
             var subPages = pagedTeasers(postsByYear, settings.pagination);
-            var basePath = settings.pages.year.path || '';
-            basePath = Path.join(settings.paths.www, basePath, year);
-            toBeBuilt = toBeBuilt.concat(addPages('year', year, subPages, basePath));
+            var outPath= Path.join(settings.paths.www, basePath, year);
+            toBeBuilt = toBeBuilt.concat(addPages('archive', year, subPages, outPath));
         });
     }
 
-    //ARCHIVE page
-    if (recipes.archive) {
+    // //ARCHIVE page
+    // if (recipes.archive) {
 
-    }
+    // }
 
     function recur() {
         if (toBeBuilt.length) {

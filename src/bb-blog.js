@@ -12,7 +12,7 @@ var sluggify = require('speakingurl');
 var render = require('./render');
 
 var settings;
-var index = {};
+var posts = {};
 var publishedat;
 
 
@@ -79,6 +79,7 @@ function parseValue(key, value) {
       case 'tags':
       case 'categories': return value.replace(/,/g,' ').split(' ');
       case 'publishedat': return Date.parse(value);
+      case 'delete' :
       case 'published' :
       case 'comments' : return booleans[value.toLowerCase()];
     default: return value;
@@ -213,12 +214,12 @@ function writeIndexJson(dir, fileName, data, outDir) {
     log(dir);
     log('Saving json of dir contents to ' + Path.resolve(outDir, 'index.json'));
     try {
-        if (!index)  index = createIndex(dir);
+        if (!posts)  posts = createIndex(dir);
         else {
-            index[fileName] = extend({ fileName: Path.join(dir, fileName) },
+            posts[fileName] = extend({ fileName: Path.join(dir, fileName) },
                                      parseMetaData(data));
         }
-        fs.outputJsonSync(Path.join(outDir, 'index.json'), index);
+        fs.outputJsonSync(Path.join(outDir, 'index.json'), posts);
         vow.keep();
     } catch(e) {
         vow.breek(e);
@@ -227,34 +228,69 @@ function writeIndexJson(dir, fileName, data, outDir) {
 }
 
 function processMeta(meta) {
+    var old = posts[meta.file];
     log(meta);
-    
     //delete
-    if (index[meta.file] && meta.delete) {
+    // if (posts[meta.file] && meta.delete) {
+    if (meta.delete) {
         fs.removeSync(Path.join(settings.paths.base, settings.paths.posts, meta.file));
-        delete index[meta.file];
-        return;
+        fs.removeSync(Path.join(settings.paths.www,
+                                settings.pages.post.path, sluggify(meta.title) + '.html'));
+        delete posts[meta.file];
+        return null;
+    }
+    
+    //clear out www/post if new post, deleted post or title has changed.
+    //since we're now going to have to regenerate all of them with new widgets
+    if (!old || meta.delete || old.title !== meta.title) {
+        log('------------removing all posts in www/post');
+        fs.removeSync(Path.join(settings.paths.www, settings.pages.post.path));
+    }
+        
+    if (old && old.title !== meta.title) {
+        fs.removeSync(Path.join(settings.paths.www, settings.pages.post.path,
+                                old.slug +  '.html'));
     }
     // //publish
-    if (meta.published && (!index[meta.file] ||
-                           (!index[meta.file].published && !publishedat[meta.file])
+    if (meta.published && (!posts[meta.file] ||
+                           (!posts[meta.file].published && !publishedat[meta.file])
                           ))
         publishedat[meta.file] = new Date();
     // title
     meta.title = meta.title || meta.file.slice(0, meta.file.lastIndexOf('.'));
     // meta.slug = sluggify(meta.title);
     meta.publishedat = meta.publishedat || publishedat[meta.file];
-    meta.createdAt = index[meta.file] ? index[meta.file].createdAt : new Date();
+    meta.createdAt = posts[meta.file] ? posts[meta.file].createdAt : new Date();
+    posts[meta.file] = meta;
 }
+
+function isUniqueSlug(slug) {
+    try {
+      fs.statSync(Path.join(settings.paths.www, settings.pages.post.path, slug + '.html'));
+    } catch (e) { return true; };
+    return false;
+}
+
 
 //1 new file
 //2 updating file
 //3 deleting file
 
+function getUID(len){
+    var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+          out = '';
+    var n = Math.pow(chars.length, len);
+
+    for(var i=0, clen=chars.length; i<len; i++){
+       out += chars.substr(0|Math.random() * clen, 1);
+    }
+     return out;
+}
+
 function processPost(req) {
     var meta;
     var file = Path.basename(req.path);
-    return (function() {
+    return (function postParser() {
         try { meta = parsePost(req.data);
               var title = file.slice(0, file.lastIndexOf('.'));
               meta = parseMetaData(meta.metaStr,
@@ -263,46 +299,59 @@ function processPost(req) {
                                    });
               meta.file = file;
               meta.slug = sluggify(meta.title);
+              log('meta:', meta);
             
             } catch(e) { return VOW.broken(e); }
         if (typeof req.data === 'undefined')  {
             meta.delete = true;   
         }
         else if (!meta.delete) {
-            log('data received', req.data);
-            return saveFile(req.path, req.data); 
-        }
+            log('data received', req.data, req.new);
+            //make sure a new post has a unique 'file' name in build/post
+            if (req.new && posts[meta.file]) {
+                file = meta.file = meta.file.slice(0, meta.file.lastIndexOf('.')) +
+                    '_' + getUID(6) + Path.extname(meta.file);
+                req.path = Path.join(settings.paths.posts, meta.file);
+                meta._all = true;
+            }
+            //make sure any new posts or retitled posts are have unique titles:
+            if ((req.new || (posts[file] && posts[file].title !== meta.title) &&
+                 !isUniqueSlug(meta.slug))) return VOW.broken({
+                     msg: 'The title does not generate a unique url for the post'});
+                 else return saveFile(req.path, req.data); 
+                }
         return VOW.kept();
     }()).when(
             function() {
                 log('Rendering site after saving/removing post: ', req.path);
-                try {  processMeta(meta);
-                       var old = index[meta.file];
-                       index[meta.file] = meta;
-                    } catch (e) { return VOW.broken(e); }
-                return render.renderSite(index, old, file);
+                try {
+                    // var old = posts[meta.file];
+                    file = processMeta(meta);
+                } catch (e) { return VOW.broken(e); }
+                return render.renderSite(posts, file);
             });
                     
 }
 
 //API-----------------------
 function handleRequest(req, res, action) {
-    log("handleRequest is handling post!!", settings);
+    log("handleRequest is handling post!!", settings, action);
 
     return req.session.get()
         .when(function(session){
             log('session data is: ' , session);
             if (settings.auth && (!session.data || !session.data.verified))
                 return VOW.broken('Not authorized.');
-            if (action === 'save') return gatherData(req);
+            if (action === 'save' || action === 'new') return gatherData(req);
             else return VOW.kept();
         })
         .when(
             function(someData) {
                 req.path = req.url.query && req.url.query.path;
                 if (!req.path && ! req.someData)
-                    return render.renderSite(index);
+                    return render.renderSite(posts);
                 req.data = someData;
+                log('-------------------------', someData);
                 //only save/remove at valid 'paths'
                 var isValidPath = settings.writable.some(function(p) {
                     // var valid = req.path.indexOf(p + '/') === 0;
@@ -311,6 +360,7 @@ function handleRequest(req, res, action) {
                     // return valid;
                 });
                 //process post if path matches
+                if (action === 'new') req.new = true;
                 return isValidPath ?
                     (req.path.indexOf(settings.paths.posts) === 0 ? processPost(req) :
                      saveFile(req.path, req.data)) :
@@ -358,7 +408,7 @@ var defaults = {
     ,pages: {
         // *** an list page, just a list in tree form, by year/month
         // archive: { recipe: 'some archive recipe' }
-        archive: true
+        archive: { path: 'archive' }
         // *** a tag page, paginated, teasers
         // links to other pages when more than one page
         // previous, next, page number, last, first page
@@ -366,14 +416,14 @@ var defaults = {
         // *** a month page, paginated, teasers
         // next/previous month/year
         // links to other pages when more than one page
-        ,month: true //uses default recipe
+        // ,month: true //uses default recipe
         // previous, next, page number, last, first page
         // *** a year page, paginated, teasers
         // links to other pages when more than one page
         // next/previous monthngs/year
         // previous, next, page number, last, first page
         // ,year: 'some year recipe.js'
-        ,year: true
+        // ,year: true
         // *** a landing page with all posts (paginated)
         ,landing: true
         // *** a page with the post
@@ -418,11 +468,12 @@ module.exports = {
         try {
             publishedat = fs.readJsonSync(Path.join(settings.paths.base, settings.publishedat));
         } catch (e) { publishedat = {}; }
-        index = createIndex(Path.join(settings.paths.base, settings.paths.posts));
-        log(util.inspect(index, { depth:10, colors:true }));
+        posts = createIndex(Path.join(settings.paths.base, settings.paths.posts));
+        log(util.inspect(posts, { depth:10, colors:true }));
         render.init(settings);
     },
     save: function(req, res) { handleRequest(req, res, 'save'); },
+    new: function(req, res) { handleRequest(req, res, 'new'); },
     remove: function(req, res) { handleRequest(req, res, 'remove'); },
     render: function(req, res) { handleRequest(req, res); }
     // ,sendResponse: sendResponse

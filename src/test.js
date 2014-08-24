@@ -1,4 +1,6 @@
-
+var fs = require('fs');
+console.log(fs.statSync('./render.js'));
+console.log(fs)
 //TEST -=================================================
 // module.exports.init({
 //     //build dir of blog repo

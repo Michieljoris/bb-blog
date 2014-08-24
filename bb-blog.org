@@ -197,7 +197,6 @@ rebuild relevant month, year, landing
 
     
 * TODO
-** add new page
 ** filter out unpublished 
    
 ** some kind of automation, edit the site online, then produce js free version and
@@ -206,11 +205,26 @@ push to github.io
 ** enable authentication using persona
 ** style ala current axion5.net   
 ** search
+** proper error reporting:
+Letting the user know what happened when something went wrong!!!
    
 ** add to firstdoor
+** setting meta title for browser history and backward/forward buttons
+** calculate proper teasers for posts, not just all or nothing if no teaser break is found
+  in bb-blog.js/retrieveTeaser 
+** create archive page and collapsed archive widget   
+** DONE unique posts!!!
+Don't overwrite old posts when creating new posts or renaming them
+When saving post, check for uniques of 'file' first, if not unique add number
+to it, till unique file name is found, then check for uniqueness of slug. If
+not unique send back error, and don't save the file!!!
+** DONE remove stale html pages in www, 
+when renaming old slug.html remain
+** DONE add new page
 ** DONE add date to post   
 ** DONE add comments
 ** DONE next/prev/last/first nav links on teaser pages 
+** DONE make sure blog with no posts still has a way to add more posts
+  Just open edit.html, produced by running bin/build 
    
-   
-** create archive page and collapsed archive widget   
+* DOING
