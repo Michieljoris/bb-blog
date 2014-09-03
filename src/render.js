@@ -207,9 +207,12 @@ function fetchRecipe(page) {
     (settings.pages[page].recipe && settings.pages[page].recipe[settings.renderMode]) ||
         settings.pages[page].recipe ||
         settings.recipe[settings.renderMode] || settings.recipe;
+    if (!recipeName) log._e('No recipe specified for page ' + page);
     var from, to, fromObj, toObj, fromProp, toProp;
     var recipe = recipeCache[recipeName] = recipeCache[recipeName] ||
         evalFile(Path.join(settings.paths.base, recipeName));
+    console.log('recipe',recipe);
+    if (!recipe || !Object.keys(recipe).length) log._e('Error: Recipe non-existant for ' + recipeName + ' for page ' + page);
     from = settings.pages[page].from || settings.from;
     to = settings.pages[page].to || settings.to;
     try { fromObj = getObject(recipe, from.slice(0, from.length));

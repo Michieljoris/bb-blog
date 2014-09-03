@@ -473,6 +473,7 @@ module.exports = {
         try {
             publishedat = fs.readJsonSync(Path.join(settings.paths.base, settings.publishedat));
         } catch (e) { publishedat = {}; }
+        fs.ensureDirSync(Path.join(settings.paths.base, settings.paths.posts));
         posts = createIndex(Path.join(settings.paths.base, settings.paths.posts));
         log(util.inspect(posts, { depth:10, colors:true }));
         render.init(settings);

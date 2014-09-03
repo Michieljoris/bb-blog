@@ -101,7 +101,7 @@ module.exports = {
     // `devDependencies` block for the way to include dependencies.
     "dependencies": {
         "dougs_vow": "*",
-        "fs-extra": "0.8.x",
+        "fs-extra": "0.11.x",
         "html-builder": "git://github.com/michieljoris/html-builder.git"
         ,"logthis": "*"
         ,"extend": "*"
