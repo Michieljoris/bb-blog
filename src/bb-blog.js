@@ -354,7 +354,7 @@ function handleRequest(req, res, action) {
                 if (!req.path && ! req.someData)
                     return render.renderSite(posts);
                 req.data = someData;
-                log('-------------------------', someData);
+                // log('-------------------------', someData);
                 //only save/remove at valid 'paths'
                 var isValidPath = settings.writable.some(function(p) {
                     // var valid = req.path.indexOf(p + '/') === 0;
@@ -376,7 +376,7 @@ function handleRequest(req, res, action) {
                 sendResponse(res);
             },
             function(err) {
-                log('sending response, ERROR!');
+                log('sending response, ERROR!', err);
                 sendResponse(res, err);
             }
         );

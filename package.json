@@ -30,8 +30,8 @@
     "logthis": "*",
     "extend": "*",
     "moment": "2.8.x",
-    "synergipsum": "0.2.x",
     "speakingurl": "0.11.x",
+    "datejs": "1.0.x",
     "colors": "*"
   },
   "devDependencies": {
@@ -41,5 +41,5 @@
   "scripts": {
     "docs": "node node_modules/.bin/docco src/bb-blog.js"
   },
-  "version": "0.1.10"
+  "version": "0.1.14"
 }

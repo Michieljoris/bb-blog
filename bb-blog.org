@@ -201,7 +201,6 @@ rebuild relevant month, year, landing
 ** add to firstdoor
    
 ** produce json   
-   
 ** markdown editor
 ** embedded images
 ** code highlighing
@@ -239,3 +238,4 @@ when renaming old slug.html remain
   Just open edit.html, produced by running bin/build 
    
 * DOING
+** adding to firstdoor 

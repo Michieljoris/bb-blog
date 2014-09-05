@@ -106,8 +106,9 @@ module.exports = {
         ,"logthis": "*"
         ,"extend": "*"
         ,"moment": "2.8.x"
-        ,"synergipsum": "0.2.x"
+        // ,"synergipsum": "0.2.x"
         ,"speakingurl": "0.11.x",
+        "datejs": "1.0.x",
         "colors": "*"
     },
     // What dependencies are useful only for developers?
