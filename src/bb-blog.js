@@ -411,7 +411,8 @@ var defaults = {
     ,pages: {
         // *** an list page, just a list in tree form, by year/month
         // archive: { recipe: 'some archive recipe' }
-        archive: { path: 'archive' }
+        archive: { path: 'archive' },
+        unpublished: { path: 'unpublished' }
         // *** a tag page, paginated, teasers
         // links to other pages when more than one page
         // previous, next, page number, last, first page

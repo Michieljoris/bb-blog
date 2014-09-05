@@ -142,20 +142,28 @@ function recentPartial(postList, options, filterAttr) {
 
 
 //returns an html string of a archive widget
-function archivePartial(archive, options) {
+function archivePartial(archive, options, filterAttr) {
     function url(link, text) {
         return '<a  href="/' + link + '" >'  + (text || link) + '</a>';
     }
     if (!options) return null;
     var basePath = settings.pages.archive.path || 'archive';
     var partial = '<ul class="css-treeview" id="archive-partial">\n' +
-        Object.keys(archive).map(function(y) {
+        Object.keys(archive)
+        .map(function(y) {
             return ' <li>' + url(Path.join(basePath, y), y) + '\n' + '  <ul>\n' +
                 Object.keys(archive[y]).map(function(m) {
                     return '   <li>' + url(Path.join(basePath, y + '/' + monthByName[m]),
                                            monthByName[m]) + '\n' + '    <ul>\n' +
-                        archive[y][m].map(function(p) {
-                            var path = Path.join(settings.pages.post.path || 'post',
+                        archive[y][m]
+                        .filter(function(p) {
+                            return !filterAttr || p[filterAttr];
+                        })
+                        .map(function(p) {
+                            var outPath = p.published ?
+                                settings.pages.post.path : settings.pages.unpublished.path;
+                            log(p.published , outPath);
+                            var path = Path.join(outPath || 'post',
                                                  p.slug + settings.pages.post.ext);
                             return '     <li>' + url(path, p.title) + '</li>';
                         }).join('\n') +
@@ -345,12 +353,23 @@ function postHeader(meta) {
 //file refers to a potentially modified/deleted/create post, this is handy since
 //if we know what changed we might not need to recreate all pages.
 function renderSite(posts,  file) {
-    var postList = Object.keys(posts).map(function(k) { return posts[k]; });
-    log('rendering site', file, posts[file], postList);
+    var published = [];
+    var unpublished = [];
+    var allPosts = [];
+    Object.keys(posts).map(function(k) { return posts[k]; })
+        .forEach(function(post) {
+            allPosts.push(post);
+            if (post.published) published.push(post);
+            else unpublished.push(post);
+            
+        });
+    // var postList = Object.keys(posts).map(function(k) { return posts[k]; });
+    log('rendering site', file, posts[file], published);
     
-    var archive = groupByYearMonth(postList);
-    var tags = groupByTag(postList);
-    sortIndexListByDate(postList);
+    var archive = groupByYearMonth(published);
+    var unpublishedArchive = groupByYearMonth(unpublished);
+    var tags = groupByTag(published);
+    sortIndexListByDate(published);
 
     //WIDGETS
     var widgets;
@@ -358,8 +377,10 @@ function renderSite(posts,  file) {
         try {
             widgets = {
                 tagWidget: tagPartial(tags, settings.widgets.tag),
-                recentWidget: recentPartial(postList, settings.widgets.recent),
-                archiveWidget: archivePartial(archive, settings.widgets.archive)
+                recentWidget: recentPartial(published, settings.widgets.recent),
+                archiveWidget: archivePartial(archive, settings.widgets.archive),
+                unpublishedWidget: archivePartial(unpublishedArchive,
+                                                  settings.widgets.archive)
             };
         } catch(e) {
             return VOW.broken({ msg: 'Failed to created widgets', err: e } );
@@ -378,7 +399,8 @@ function renderSite(posts,  file) {
         //don't regenerate all posts if only one post has been updated, but do so
         //in the case of a new file, deleted file or changed title, since it
         //changes the widgets on the other posts.
-        var list = postList;
+        // var list = published;
+        var list = allPosts;
         if (file) {
             if (posts[file]._all) delete posts[file]._all;
             else list = [posts[file]];
@@ -400,9 +422,11 @@ function renderSite(posts,  file) {
                         fromObj['disqus-embed'] = 'html/disqus-embed.html';
                         fromObj['disqus-count'] = 'html/disqus-count.html';
                     }
+                    var outPath = meta.published ?
+                        settings.pages.post.path : settings.pages.unpublished.path;
                     return recipes.post.customize(
                         Path.join(settings.paths.posts, meta.file),
-                        Path.join(settings.paths.www, settings.pages.post.path || 'post', 
+                        Path.join(settings.paths.www, outPath || 'post', 
                                   meta.slug + '.html'),
                         meta
                         // postHeader(meta)
@@ -419,7 +443,7 @@ function renderSite(posts,  file) {
         //TODO remove all the dirs that are just a number, as in they might be stale
         //never remove www/index.html, since it is the landing page.
         //even better generate an empty landing index.html page even when there no posts
-        subPages = pagedTeasers(postList, settings.pagination);
+        subPages = pagedTeasers(published, settings.pagination);
         basePath = settings.pages.landing.path || '';
         var outPath = Path.join(settings.paths.www, basePath);
         log('outpath for landing:', outPath, settings.paths.www);
