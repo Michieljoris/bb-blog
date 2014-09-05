@@ -41,5 +41,5 @@
   "scripts": {
     "docs": "node node_modules/.bin/docco src/bb-blog.js"
   },
-  "version": "0.1.14"
+  "version": "0.1.16"
 }
