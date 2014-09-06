@@ -118,7 +118,7 @@ function sortIndexListByDate(postList) {
 //returns an html string of a recent widget
 function recentPartial(postList, options, filterAttr) {
     if (!options) return null;
-    var n = options.max;
+    var n = options.max || postList.length;
     var partial = '<ul id="most-recent-partial">\n' +
         postList
         .slice()
@@ -127,8 +127,10 @@ function recentPartial(postList, options, filterAttr) {
             return !filterAttr || p[filterAttr];
         })
         .slice(0,n).map(function(p) {
-            var path = Path.join(settings.pages.post.path || 'post', p.slug +
-                                settings.pages.post.ext);
+            var outPath = p.published ?
+                settings.pages.post.path : settings.pages.unpublished.path;
+            var path = Path.join(outPath || 'post', p.slug +
+                                 settings.pages.post.ext);
             return '  <li>' + '<a href="/' + path + '">' + p.title + '</a></li>';
         }).join('\n') +
         '\n</ul>';
@@ -162,7 +164,6 @@ function archivePartial(archive, options, filterAttr) {
                         .map(function(p) {
                             var outPath = p.published ?
                                 settings.pages.post.path : settings.pages.unpublished.path;
-                            log(p.published , outPath);
                             var path = Path.join(outPath || 'post',
                                                  p.slug + settings.pages.post.ext);
                             return '     <li>' + url(path, p.title) + '</li>';
@@ -367,7 +368,7 @@ function renderSite(posts,  file) {
     log('rendering site', file, posts[file], published);
     
     var archive = groupByYearMonth(published);
-    var unpublishedArchive = groupByYearMonth(unpublished);
+    // var unpublishedArchive = groupByYearMonth(unpublished);
     var tags = groupByTag(published);
     sortIndexListByDate(published);
 
@@ -379,8 +380,7 @@ function renderSite(posts,  file) {
                 tagWidget: tagPartial(tags, settings.widgets.tag),
                 recentWidget: recentPartial(published, settings.widgets.recent),
                 archiveWidget: archivePartial(archive, settings.widgets.archive),
-                unpublishedWidget: archivePartial(unpublishedArchive,
-                                                  settings.widgets.archive)
+                unpublishedWidget: recentPartial(unpublished, {})
             };
         } catch(e) {
             return VOW.broken({ msg: 'Failed to created widgets', err: e } );
@@ -443,11 +443,11 @@ function renderSite(posts,  file) {
         //TODO remove all the dirs that are just a number, as in they might be stale
         //never remove www/index.html, since it is the landing page.
         //even better generate an empty landing index.html page even when there no posts
-        subPages = pagedTeasers(published, settings.pagination);
+        subPages = pagedTeasers(published.slice().reverse(), settings.pagination);
         basePath = settings.pages.landing.path || '';
         var outPath = Path.join(settings.paths.www, basePath);
         log('outpath for landing:', outPath, settings.paths.www);
-        toBeBuilt = toBeBuilt.concat(addPages("landing", 'Latest', subPages, outPath));
+        toBeBuilt = toBeBuilt.concat(addPages("landing", 'Latest posts', subPages, outPath));
     }
 
     //TAG page(s)

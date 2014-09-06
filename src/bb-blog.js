@@ -16,8 +16,8 @@ var posts = {};
 var publishedat;
 
 
-
-function sendResponse(res, err) {
+//client should call location.pathname = pathname
+function sendResponse(res, err, pathname) {
     var headers = {'Content-Type': 'text/html'};
     var returnCode = 403;
     var descr = err;
@@ -28,7 +28,7 @@ function sendResponse(res, err) {
         descr = "OK";
     }
     res.writeHead(returnCode, descr, headers);
-    res.write(JSON.stringify({ success: !err, error: err}));
+    res.write(JSON.stringify({ success: !err, error: err, pathname: pathname}));
     res.end();
 }
 
@@ -77,7 +77,13 @@ function parseValue(key, value) {
         'yes': true, 'no': false, 'true': true, 'false': false, '0': false, '1': true };
     switch(key) {
       case 'tags':
-      case 'categories': return value.replace(/,/g,' ').split(' ');
+      case 'categories':
+        return value
+            .replace(/,/g,' ')
+            .split(' ')
+            .filter(function(tag) {
+                return tag.trim().length;  
+            });
       case 'publishedat': return Date.parse(value);
       case 'delete' :
       case 'published' :
@@ -288,7 +294,7 @@ function getUID(len){
      return out;
 }
 
-function processPost(req) {
+function processPost(req, action) {
     var meta;
     var file = Path.basename(req.path);
     return (function postParser() {
@@ -320,19 +326,33 @@ function processPost(req) {
                 (req.new || (posts[file] && posts[file].title !== meta.title)) &&
                     !isUniqueSlug(meta.slug)
             ) return VOW.broken({
-                     msg: 'The title does not generate a unique url for the post'});
-                 else return saveFile(req.path, req.data); 
-                }
+                msg: 'The title does not generate a unique url for the post'});
+            else return saveFile(req.path, req.data); 
+        }
         return VOW.kept();
     }()).when(
+        function() {
+            log('Rendering site after saving/removing post: ', req.path);
+            try {
+                // var old = posts[meta.file];
+                file = processMeta(meta);
+            } catch (e) { return VOW.broken(e); }
+            return render.renderSite(posts, file);
+        })
+        .when(
             function() {
-                log('Rendering site after saving/removing post: ', req.path);
-                try {
-                    // var old = posts[meta.file];
-                    file = processMeta(meta);
-                } catch (e) { return VOW.broken(e); }
-                return render.renderSite(posts, file);
-            });
+                //return path for the client to load when receiving response
+                if (action === 'new')
+                    return Path.join(settings.pages.unpublished.path, meta.slug);
+                if (action === 'save') return Path.join(
+                    !meta.published ?
+                        settings.pages.unpublished.path :
+                        settings.pages.post.path,
+                    meta.slug);
+                // if (action === 'delete') return settings.paths.blog;
+                return settings.paths.blog ? settings.paths.blog : false;
+            }
+        );
                     
 }
 
@@ -365,15 +385,15 @@ function handleRequest(req, res, action) {
                 //process post if path matches
                 if (action === 'new') req.new = true;
                 return isValidPath ?
-                    (req.path.indexOf(settings.paths.posts) === 0 ? processPost(req) :
-                     saveFile(req.path, req.data)) :
+                    (req.path.indexOf(settings.paths.posts) === 0 ?
+                     processPost(req, action) : saveFile(req.path, req.data)) :
                 VOW.broken('Not a valid path: ' + req.path);
                     
             })
         .when(
-            function() {
-                log('sending response, all good');
-                sendResponse(res);
+            function(pathname) {
+                log('sending response, all good, pathname:', pathname);
+                sendResponse(res, null, pathname);
             },
             function(err) {
                 log('sending response, ERROR!', err);
