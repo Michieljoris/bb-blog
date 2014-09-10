@@ -197,8 +197,8 @@ rebuild relevant month, year, landing
 
     
 * TODO
-** filter out unpublished 
-** add to firstdoor
+** proper error reporting:
+Letting the user know what happened when something went wrong!!!
    
 ** produce json   
 ** markdown editor
@@ -216,12 +216,11 @@ add upload button:
 ** use delete button?? 
 ** style ala current axion5.net   
 ** search
-** proper error reporting:
-Letting the user know what happened when something went wrong!!!
-   
 ** calculate proper teasers for posts, not just all or nothing if no teaser break is found
   in bb-blog.js/retrieveTeaser 
 ** create archive page and collapsed archive widget   
+** DONE add to firstdoor
+** DONE filter out unpublished 
 ** DONE setting meta title for browser history and backward/forward buttons
 ** DONE unique posts!!!
 Don't overwrite old posts when creating new posts or renaming them
@@ -237,5 +236,3 @@ when renaming old slug.html remain
 ** DONE make sure blog with no posts still has a way to add more posts
   Just open edit.html, produced by running bin/build 
    
-* DOING
-** adding to firstdoor 
