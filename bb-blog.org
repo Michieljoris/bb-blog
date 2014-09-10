@@ -237,3 +237,4 @@ when renaming old slug.html remain
   Just open edit.html, produced by running bin/build 
    
   
+  
