@@ -1,0 +1,154 @@
+#+TITLE: bb-blog
+
+For a working example see my [[http://github.com/michieljoris/blog][blog]] repo.
+
+An blogging extension for [[html://github.com/michieljoris/bb-server][bb-server]] (optional) and [[http://github.com/michieljoris/html-builder][html-builder]] (necessary),
+producing post pages, widgets, landing/latest, archive and tag pages. Pagination
+is added when there are more post teasers than fit on a page. Comments from
+Disqus can be enabled for all or per post. Also a little crud api is implemented
+so the blog could be managed from the site where the blog is implemented.
+
+All posts are freely editable as files. Simple meta data (title, published, date
+etc) is extracted from them to produce the proper pages.
+
+The crud interface basically implements a number of request handler functions. Bb-server is
+able to forward any route/method combination any function to handle. Bb-server calls these
+functions with the following signature, and this is what bb-blog expects: fn(req, res).
+
+Bb-blog receives the requests and is able to save a new post, update or remove an
+existing post, or just render the blog.
+
+Posts are saved on the server as files, not in a database. Bb-blog is
+able to render the whole blog from just the posts. It uses html-builder to
+actually render the site. All bb-blog does is parse all the posts in some folder,
+and produce a number of fragments which then are used by html-builder to put the
+whole site together. 
+
+So once bb-server runs, bb-blog is properly configured and the build recipes
+for html-builder are properly set, one command (render) to the server will
+build the site. By configuring the recipes and adding the right fragments to
+the build directory a site can be built that is more than just a blog.
+
+Example configuration: 
+
+#+begin_src javascript
+//Any of these settings can be overridden by calling the init function on this
+//module and passing different values. Any values not defined are taken from
+//this set of defaults
+var defaults = {
+    paths: {
+        //Base path to directory with source files for html-builder:
+        base: 'build',
+        //Path where posts are saved, relative to paths.base:
+        posts: 'post',
+        //Path to directory served to internet:
+        www: 'www',
+        //Path where widgets are found, relative to www
+        widgets: 'widget'
+    }
+    //Bb-blog saves data to the server, this limits which paths it is
+    //allowed to save to. This is relative to the paths.base path.
+    ,writable: ['editable', 'post']
+    //Whether to check for session.data.verified === true, set to false for
+    //testing purpose
+    ,auth: true,
+    //Number of teasers/posts per page on collection pages such as landing,
+    //archive and tag.
+    pagination: 3
+    //Recent, archive and tag widget
+    //You would set save to true if you want to pull these widgets in ajax calls
+    //to build a page dynamically on the client, they get saved to path set in
+    //paths above, max refers to number blog titles listed in a widget
+    ,widgets: {
+        recent: { max: 3, save: false } ,archive: { save: false } ,tag: { max: 3 }
+    }
+    //If set to true, whether comments are enabled are decided per post,
+    //depending on what the setting is in the post's metadata. 
+    ,enableCommentsPerPost: true
+    //Global comment setting, only effective if previous setting is set to
+    //false, set both to false to disable comments altogether
+    ,comments: true
+    
+    //A recipe (string) or a list of recipes used to build pages unless
+    //overridden for a page in the particular pages prop below.
+    ,recipe: { editable: 'recipe.js', nojs: 'recipe.js' }
+    //If the previous prop is a list the following prop decides which recipe in
+    //the list is used. This should be one of the keys of the previous prop.
+    ,renderMode: 'editable'
+    //Default path into a recipe to where bb-blog is to insert its payload
+    //(post, archive/tag/landing teaser list etc), can also be overridden for
+    //any particular page by adding this setting to it, eg to pages.post.from
+    ,from: [ 'fromTemplate', 'mapping', 'main']
+    //Default object path into a recipe to where bb-blog is to insert the out
+    //path for a particular page, for instance pages.post.path gets inserted
+    //here when building a post page. Can be set per page as well.
+    ,to: [ 'toTemplate', 'out' ]
+    //For keeping track of when first published. Can be overridden by adding
+    //publishedat metadata to a post, no need to modify. TODO Maybe should be
+    //removed from here..
+    ,publishedat: 'publishedat.json'
+    
+    //Bb-blog can build collections of posts, organised by tag, year/month,
+    //unpublished status and just all of them in reverse chronological order
+    //(landing). Other than that it can build a page for every post as well. Set
+    //any of the following to false to prevent the page(s) from being build. Or
+    //assign an object specifying path to save the pages to (relative to
+    //base.www) and/or a recipe to use to build the page. A full example set of
+    //props is given for the archive page. All pages can also just be set to
+    //true or false, or a string for a path.
+    ,pages: {
+        // Landing page with all teasers of posts (paginated).
+        landing: true,
+        // Archive pages. Teasers of posts listed by years and months. 
+        archive: { path: 'archive'
+                   // ,recipe: 'some archive recipe'  //or:
+                   // ,recipe: { editable: 'recipe.js', nojs: 'recipe.js' }
+                   // ,from: [ 'fromTemplate', 'mapping', 'main']
+                   // ,to: [ 'toTemplate', 'out' ]
+                 },
+        // List of teasers of posts, listed by tag. 
+        tag: { path: 'tag' },
+        // A page with a post
+        post: { path: 'post' },
+        //Any unpublished posts will be added to the unpublished folder, not to
+        //the post folder. Only prop that can be set is the path.
+        unpublished: { path: 'unpublished' }
+    }
+    //NOT TESTED
+    //Json of list of posts on server. Also set whether to add recalculated
+    //lists. Set to false to disable producing this json. Can be used by client
+    //to dynamically build a blog.
+    ,json: { byTag: true, byYearMonth: true, byReverseDate: true }
+};
+
+var blog = require('bb-blog');
+
+blog.init(defaults);
+
+//functions that handle requests:
+blog.save(req, res);
+blog.new(req, res);
+blog.remove(req, res);
+blog.render(req, res);
+#+end_src
+
+=save= should be a POST request and expects a query parameter called path and
+data. The path refers to a path/file name on the server where the data should be
+saved. Where this is exactly is set in the configuration for bb-blog (see above)
+
+=new= expects the same path parameter, but nothing more. A new post is created
+using the path as file name.
+
+=remove= again expects a path parameter and removes the appropriate file.
+
+All three commands will automatically re-render the site after
+deleting/updating/creating the right file. This also means recalculating
+archive, tag and landing pages, and updating relevant widgets. There are 4
+widgets: tags, archive, recent and unpublished.
+
+You can also =render= directly by calling this function.
+
+
+
+
+=

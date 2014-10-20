@@ -1,0 +1,1058 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>bb-blog</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="bb-blog"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2014-10-19T13:26+0200"/>
+<meta name="author" content="michieljoris"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">bb-blog</h1>
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 concerns:</a>
+<ul>
+<li><a href="#sec-1-1">1.1 create pages using json</a></li>
+<li><a href="#sec-1-2">1.2 create fake articles using some text generator for testing</a></li>
+<li><a href="#sec-1-3">1.3 three use cases:</a>
+<ul>
+<li><a href="#sec-1-3-1">1.3.1 firstdoor/angular</a></li>
+<li><a href="#sec-1-3-2">1.3.2 client routing</a></li>
+<li><a href="#sec-1-3-3">1.3.3 fully static blog site</a></li>
+</ul>
+</li>
+<li><a href="#sec-1-4">1.4 pages with always paginated?</a></li>
+</ul>
+</li>
+<li><a href="#sec-2">2 --------------------</a></li>
+<li><a href="#sec-3">3 recipes:</a></li>
+<li><a href="#sec-4">4 new post?</a></li>
+<li><a href="#sec-5">5 pagination?</a></li>
+<li><a href="#sec-6">6 unpublished posts?</a></li>
+<li><a href="#sec-7">7 rebuilding paginated page?</a></li>
+<li><a href="#sec-8">8 comments?</a></li>
+<li><a href="#sec-9">9 metadata in text fragment on top, crossed out</a></li>
+<li><a href="#sec-10">10 ---------------------------</a></li>
+<li><a href="#sec-11">11 file structure on server?</a>
+<ul>
+<li>
+<ul>
+<li><a href="#sec-11-1">11.1 basePath/ /in build dir of site, set in bb-blog.init</a></li>
+</ul>
+</li>
+<li><a href="#sec-11-1">11.1 bb-blog uses the above data to produce:</a>
+<ul>
+<li><a href="#sec-11-1-1">11.1.1 www</a></li>
+</ul></li>
+</ul>
+</li>
+<li><a href="#sec-12">12 ---------------------------</a></li>
+<li><a href="#sec-13">13 Files to build</a>
+<ul>
+<li><a href="#sec-13-1">13.1 widgets</a></li>
+<li><a href="#sec-13-2">13.2 pages</a>
+<ul>
+<li><a href="#sec-13-2-1">13.2.1 an archive page, just a list in tree form (year/month/title)</a></li>
+<li><a href="#sec-13-2-2">13.2.2 a tag page, paginated, teasers</a></li>
+<li><a href="#sec-13-2-3">13.2.3 a month page, paginated, teasers</a></li>
+<li><a href="#sec-13-2-4">13.2.4 a year page, paginated, teasers</a></li>
+<li><a href="#sec-13-2-5">13.2.5 a landing page, paginated, teasers</a></li>
+<li><a href="#sec-13-2-6">13.2.6 a post page</a></li>
+</ul>
+</li>
+<li><a href="#sec-13-3">13.3 json of posts on server</a></li>
+</ul>
+</li>
+<li><a href="#sec-14">14 Render site:</a></li>
+<li><a href="#sec-15">15 Save and delete:</a>
+<ul>
+<li><a href="#sec-15-1">15.1 same publish date</a>
+<ul>
+<li><a href="#sec-15-1-1">15.1.1 same title, same tags,</a></li>
+<li><a href="#sec-15-1-2">15.1.2 same title, different tags:</a></li>
+<li><a href="#sec-15-1-3">15.1.3 different title, same tags:</a></li>
+<li><a href="#sec-15-1-4">15.1.4 different title, different tags:</a></li>
+</ul>
+</li>
+<li><a href="#sec-15-2">15.2 different publish date</a>
+<ul>
+<li><a href="#sec-15-2-1">15.2.1 same title, same tags,</a></li>
+<li><a href="#sec-15-2-2">15.2.2 same title, different tags:</a></li>
+<li><a href="#sec-15-2-3">15.2.3 different title, same tags:</a></li>
+<li><a href="#sec-15-2-4">15.2.4 different title, different tags:</a></li>
+</ul></li>
+</ul>
+</li>
+<li><a href="#sec-16">16 </a>
+<ul>
+<li><a href="#sec-16-1">16.1 proper error reporting:</a></li>
+<li><a href="#sec-16-2">16.2 produce json</a></li>
+<li><a href="#sec-16-3">16.3 markdown editor</a></li>
+<li><a href="#sec-16-4">16.4 embedded images</a></li>
+<li><a href="#sec-16-5">16.5 code highlighing</a></li>
+<li><a href="#sec-16-6">16.6 add editable pages to blog</a></li>
+<li><a href="#sec-16-7">16.7 some kind of automation, edit the site online, then produce js free version and</a></li>
+<li><a href="#sec-16-8">16.8 enable authentication using persona</a></li>
+<li><a href="#sec-16-9">16.9 use delete button??</a></li>
+<li><a href="#sec-16-10">16.10 style ala current axion5.net</a></li>
+<li><a href="#sec-16-11">16.11 search</a></li>
+<li><a href="#sec-16-12">16.12 calculate proper teasers for posts, not just all or nothing if no teaser break is found</a></li>
+<li><a href="#sec-16-13">16.13 create archive page and collapsed archive widget</a></li>
+<li><a href="#sec-16-14">16.14 add to firstdoor</a></li>
+<li><a href="#sec-16-15">16.15 filter out unpublished</a></li>
+<li><a href="#sec-16-16">16.16 setting meta title for browser history and backward/forward buttons</a></li>
+<li><a href="#sec-16-17">16.17 unique posts!!!</a></li>
+<li><a href="#sec-16-18">16.18 remove stale html pages in www,</a></li>
+<li><a href="#sec-16-19">16.19 add new page</a></li>
+<li><a href="#sec-16-20">16.20 add date to post</a></li>
+<li><a href="#sec-16-21">16.21 add comments</a></li>
+<li><a href="#sec-16-22">16.22 next/prev/last/first nav links on teaser pages</a></li>
+<li><a href="#sec-16-23">16.23 make sure blog with no posts still has a way to add more posts</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> concerns:</h2>
+<div class="outline-text-2" id="text-1">
+
+
+</div>
+
+<div id="outline-container-1-1" class="outline-3">
+<h3 id="sec-1-1"><span class="section-number-3">1.1</span> create pages using json</h3>
+<div class="outline-text-3" id="text-1-1">
+
+</div>
+
+</div>
+
+<div id="outline-container-1-2" class="outline-3">
+<h3 id="sec-1-2"><span class="section-number-3">1.2</span> create fake articles using some text generator for testing</h3>
+<div class="outline-text-3" id="text-1-2">
+
+</div>
+
+</div>
+
+<div id="outline-container-1-3" class="outline-3">
+<h3 id="sec-1-3"><span class="section-number-3">1.3</span> three use cases:</h3>
+<div class="outline-text-3" id="text-1-3">
+
+
+</div>
+
+<div id="outline-container-1-3-1" class="outline-4">
+<h4 id="sec-1-3-1"><span class="section-number-4">1.3.1</span> firstdoor/angular</h4>
+<div class="outline-text-4" id="text-1-3-1">
+
+
+</div>
+
+</div>
+
+<div id="outline-container-1-3-2" class="outline-4">
+<h4 id="sec-1-3-2"><span class="section-number-4">1.3.2</span> client routing</h4>
+<div class="outline-text-4" id="text-1-3-2">
+
+<p>   Build tree and tag index on client.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-1-3-3" class="outline-4">
+<h4 id="sec-1-3-3"><span class="section-number-4">1.3.3</span> fully static blog site</h4>
+<div class="outline-text-4" id="text-1-3-3">
+
+<p>A page for every article,  plus update tree and tag fragments/templates.
+Plus every page tha
+</p>
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-1-4" class="outline-3">
+<h3 id="sec-1-4"><span class="section-number-3">1.4</span> pages with always paginated?</h3>
+<div class="outline-text-3" id="text-1-4">
+
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> &ndash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</h2>
+<div class="outline-text-2" id="text-2">
+
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> recipes:</h2>
+<div class="outline-text-2" id="text-3">
+
+<p>post, possibly for tag, archive, month, year
+</p>
+<p>
+All partials embedded get a identifiable comment on top that can be used on the
+client to refer to the partial, for example when saving the partial's edited
+content. Only divs with class="editable" are editable..
+So in #main we can embed a post or tag/month/year teaser list, or an archive
+tree, however to use just ids for the dynamic contant in recipe we need a
+slighty different recipe using different html, namely one that has the
+class="editable" on the #main div, where the id is embedded.
+</p>
+<p>
+  Editable text partials have their name in html comment above it.
+  Used by client as the path to save the file under server.com/article1?path=editable/article1);
+  Added by htmlbuilder because that's where the partial comes from (eg
+  editable/article1.html) when building the template it's in
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> new post?</h2>
+<div class="outline-text-2" id="text-4">
+
+<p>Insert empty post in unpublished folder, no tags, unique title (possibly from
+client), title is only allowed when not in flat list of the posts/ folder
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> pagination?</h2>
+<div class="outline-text-2" id="text-5">
+
+<p>group of teasers with links to other pages with more teasers
+always paginate? 
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> unpublished posts?</h2>
+<div class="outline-text-2" id="text-6">
+
+<p>  just marked as unpublished in their meta, just don't create the pages in www/post
+  for the unpublished posts
+</p></div>
+
+</div>
+
+<div id="outline-container-7" class="outline-2">
+<h2 id="sec-7"><span class="section-number-2">7</span> rebuilding paginated page?</h2>
+<div class="outline-text-2" id="text-7">
+
+<p> Just add the teaser to the page, split page when getting too long, also then
+ redo page befor and after to update next and previous links
+</p></div>
+
+</div>
+
+<div id="outline-container-8" class="outline-2">
+<h2 id="sec-8"><span class="section-number-2">8</span> comments?</h2>
+<div class="outline-text-2" id="text-8">
+
+<p>Just add disqus script tag to post page
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-9" class="outline-2">
+<h2 id="sec-9"><span class="section-number-2">9</span> metadata in text fragment on top, crossed out</h2>
+<div class="outline-text-2" id="text-9">
+
+<p> or some other way where it is easy to parse, and easy to hide through css 
+ depends on online editor used a little bit..
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-10" class="outline-2">
+<h2 id="sec-10"><span class="section-number-2">10</span> &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</h2>
+<div class="outline-text-2" id="text-10">
+
+</div>
+
+</div>
+
+<div id="outline-container-11" class="outline-2">
+<h2 id="sec-11"><span class="section-number-2">11</span> file structure on server?</h2>
+<div class="outline-text-2" id="text-11">
+
+
+</div>
+
+<div id="outline-container-11-1" class="outline-4">
+<h4 id="sec-11-1"><span class="section-number-4">11.1</span> basePath/ /in build dir of site, set in bb-blog.init</h4>
+<div class="outline-text-4" id="text-11-1">
+
+<ul>
+<li>recipe.js //recipes passed into bb-blog
+</li>
+<li>list-recipe.js
+</li>
+<li>tag-recipe.js
+</li>
+</ul>
+
+<ul>
+<li id="sec-11-1-1">post //path set in init of bb-blog<br/>
+<ul>
+<li>Title of post one.html //dynamically discovered by bb-blog
+</li>
+<li>Title of post two.html
+</li>
+<li>Title of post three.html
+</li>
+</ul>
+
+</li>
+</ul>
+</div>
+
+</div>
+
+<div id="outline-container-11-1" class="outline-3">
+<h3 id="sec-11-1"><span class="section-number-3">11.1</span> bb-blog uses the above data to produce:</h3>
+<div class="outline-text-3" id="text-11-1">
+
+
+</div>
+
+<div id="outline-container-11-1-1" class="outline-4">
+<h4 id="sec-11-1-1"><span class="section-number-4">11.1.1</span> www</h4>
+<div class="outline-text-4" id="text-11-1-1">
+
+<p>index.html //latest posts page, name set in bb-blog.init
+archive.html // list in tree form of all posts
+</p><ul>
+<li id="sec-11-1-1-1">post //dir set in recipe<br/>
+<ul>
+<li>Title of post one.html
+</li>
+<li>Title of post two.html
+</li>
+<li>Title of post three.html
+</li>
+</ul>
+
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-2">tag<br/>
+<ul>
+<li id="sec-11-1-1-2-1">tag-one<br/>
+<ul>
+<li id="sec-11-1-1-2-1-1">1<br/>
+index.html // list of paginated teasers
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-2-1-2">2<br/>
+index.html // list of paginated teasers
+
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-2-2">tag-two<br/>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-3">teaser<br/>
+    &lt;mirror of post dir, but abridged posts&gt; 
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-4">widget //set ini bb-blog-init<br/>
+<ul>
+<li>archive.html
+</li>
+<li>recent.html
+</li>
+<li>tags.html
+</li>
+</ul>
+
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-5">2013  //list of teasers<br/>
+index.html // link to ./1/index.html
+<ul>
+<li id="sec-11-1-1-5-1">1<br/>
+index.html // list of paginated teasers
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-5-2">2<br/>
+index.html // list of paginated teasers
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-5-3">last<br/>
+index.html // list of paginated teasers
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-5-4">June<br/>
+index.html link to ./1/index.html
+<ul>
+<li id="sec-11-1-1-5-4-1">1<br/>
+index.html // list of paginated teasers
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-5-4-2">last<br/>
+index.html // list of paginated teasers
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-5-5">October<br/>
+<ul>
+<li id="sec-11-1-1-5-5-1">1<br/>
+index.html // list of paginated teasers
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-5-5-2">2<br/>
+index.html // list of paginated teasers
+
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-6">2014<br/>
+index.html
+<ul>
+<li id="sec-11-1-1-6-1">June<br/>
+index.html
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-6-2">October<br/>
+index.html
+
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-6-3">1<br/>
+index.html // list of paginated teasers
+</li>
+</ul>
+<ul>
+<li id="sec-11-1-1-6-4">2<br/>
+index.html // list of paginated teasers
+
+
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-12" class="outline-2">
+<h2 id="sec-12"><span class="section-number-2">12</span> &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</h2>
+<div class="outline-text-2" id="text-12">
+
+</div>
+
+</div>
+
+<div id="outline-container-13" class="outline-2">
+<h2 id="sec-13"><span class="section-number-2">13</span> Files to build</h2>
+<div class="outline-text-2" id="text-13">
+
+
+</div>
+
+<div id="outline-container-13-1" class="outline-3">
+<h3 id="sec-13-1"><span class="section-number-3">13.1</span> widgets</h3>
+<div class="outline-text-3" id="text-13-1">
+
+<p>recent, archive and tag widget
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-13-2" class="outline-3">
+<h3 id="sec-13-2"><span class="section-number-3">13.2</span> pages</h3>
+<div class="outline-text-3" id="text-13-2">
+
+
+</div>
+
+<div id="outline-container-13-2-1" class="outline-4">
+<h4 id="sec-13-2-1"><span class="section-number-4">13.2.1</span> an archive page, just a list in tree form (year/month/title)</h4>
+<div class="outline-text-4" id="text-13-2-1">
+
+</div>
+
+</div>
+
+<div id="outline-container-13-2-2" class="outline-4">
+<h4 id="sec-13-2-2"><span class="section-number-4">13.2.2</span> a tag page, paginated, teasers</h4>
+<div class="outline-text-4" id="text-13-2-2">
+
+<p>links to other pages when more than one page:
+previous, next, page number, last, first page
+</p></div>
+
+</div>
+
+<div id="outline-container-13-2-3" class="outline-4">
+<h4 id="sec-13-2-3"><span class="section-number-4">13.2.3</span> a month page, paginated, teasers</h4>
+<div class="outline-text-4" id="text-13-2-3">
+
+<p>links to other pages when more than one page:
+next/previous month/year 
+previous, next, page number, last, first page
+</p></div>
+
+</div>
+
+<div id="outline-container-13-2-4" class="outline-4">
+<h4 id="sec-13-2-4"><span class="section-number-4">13.2.4</span> a year page, paginated, teasers</h4>
+<div class="outline-text-4" id="text-13-2-4">
+
+<p>links to other pages when more than one page:
+next/previous month/year 
+previous, next, page number, last, first page  
+</p></div>
+
+</div>
+
+<div id="outline-container-13-2-5" class="outline-4">
+<h4 id="sec-13-2-5"><span class="section-number-4">13.2.5</span> a landing page, paginated, teasers</h4>
+<div class="outline-text-4" id="text-13-2-5">
+
+<p>A list of all posts in reverse chronological order.
+links to other pages when more than one page:
+previous, next, page number, last, first page 
+</p></div>
+
+</div>
+
+<div id="outline-container-13-2-6" class="outline-4">
+<h4 id="sec-13-2-6"><span class="section-number-4">13.2.6</span> a post page</h4>
+<div class="outline-text-4" id="text-13-2-6">
+
+<p>   add disqus comment script tag to embed comments
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-13-3" class="outline-3">
+<h3 id="sec-13-3"><span class="section-number-3">13.3</span> json of posts on server</h3>
+<div class="outline-text-3" id="text-13-3">
+
+<p>  When set in bb-blog.init, also add list/archive/tag
+  //by id=path:
+  posts: {   
+  '//path/to/file.html': {
+  path: '//path/to/file.html'
+  teaser: '//path/to/file.teaser.html',
+  title: 'some title'
+  tags: ["t1", "t2", "t3"],
+  published: "12 June 2014"
+  created: "some/date"
+  author: 'bla foo'
+  }
+  //Posts in reverse chronological order
+  byReverseDate: [ &lt;list of posts paths&gt;]
+  //By year/month with posts in chronological order:
+  byYearMonth: { 2014: { Jan: [ &lt;list of posts&gt; ]}}
+  //by tag with posts in chronological order:
+  byTag: { tagOne: [ &lt;list of posts&gt; ]} }
+}
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-14" class="outline-2">
+<h2 id="sec-14"><span class="section-number-2">14</span> Render site:</h2>
+<div class="outline-text-2" id="text-14">
+
+<p>  Build all
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-15" class="outline-2">
+<h2 id="sec-15"><span class="section-number-2">15</span> Save and delete:</h2>
+<div class="outline-text-2" id="text-15">
+
+<p>retrieve old version and read tags and publish date and title
+if not different -&gt;  finished
+else:
+rebuild post page
+then selectively rebuild:
+if post is different: post page
+if teaser is different:
+rebuild relevant month, year, landing
+</p>
+</div>
+
+<div id="outline-container-15-1" class="outline-3">
+<h3 id="sec-15-1"><span class="section-number-3">15.1</span> same publish date</h3>
+<div class="outline-text-3" id="text-15-1">
+
+
+</div>
+
+<div id="outline-container-15-1-1" class="outline-4">
+<h4 id="sec-15-1-1"><span class="section-number-4">15.1.1</span> same title, same tags,</h4>
+<div class="outline-text-4" id="text-15-1-1">
+
+<p>    Done
+</p></div>
+
+</div>
+
+<div id="outline-container-15-1-2" class="outline-4">
+<h4 id="sec-15-1-2"><span class="section-number-4">15.1.2</span> same title, different tags:</h4>
+<div class="outline-text-4" id="text-15-1-2">
+
+<p>    tag pages, 
+    tag widget
+</p></div>
+
+</div>
+
+<div id="outline-container-15-1-3" class="outline-4">
+<h4 id="sec-15-1-3"><span class="section-number-4">15.1.3</span> different title, same tags:</h4>
+<div class="outline-text-4" id="text-15-1-3">
+
+
+</div>
+
+</div>
+
+<div id="outline-container-15-1-4" class="outline-4">
+<h4 id="sec-15-1-4"><span class="section-number-4">15.1.4</span> different title, different tags:</h4>
+<div class="outline-text-4" id="text-15-1-4">
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-15-2" class="outline-3">
+<h3 id="sec-15-2"><span class="section-number-3">15.2</span> different publish date</h3>
+<div class="outline-text-3" id="text-15-2">
+
+
+</div>
+
+<div id="outline-container-15-2-1" class="outline-4">
+<h4 id="sec-15-2-1"><span class="section-number-4">15.2.1</span> same title, same tags,</h4>
+<div class="outline-text-4" id="text-15-2-1">
+
+<ul>
+<li>all widgets, archive page
+</li>
+<li>relevant month and year pages 
+</li>
+<li>tag pages 
+</li>
+<li>post page 
+</li>
+</ul>
+
+</div>
+
+</div>
+
+<div id="outline-container-15-2-2" class="outline-4">
+<h4 id="sec-15-2-2"><span class="section-number-4">15.2.2</span> same title, different tags:</h4>
+<div class="outline-text-4" id="text-15-2-2">
+
+</div>
+
+</div>
+
+<div id="outline-container-15-2-3" class="outline-4">
+<h4 id="sec-15-2-3"><span class="section-number-4">15.2.3</span> different title, same tags:</h4>
+<div class="outline-text-4" id="text-15-2-3">
+
+</div>
+
+</div>
+
+<div id="outline-container-15-2-4" class="outline-4">
+<h4 id="sec-15-2-4"><span class="section-number-4">15.2.4</span> different title, different tags:</h4>
+<div class="outline-text-4" id="text-15-2-4">
+
+
+
+
+</div>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-16" class="outline-2">
+<h2 id="sec-16"><span class="section-number-2">16</span> <span class="todo TODO">TODO</span></h2>
+<div class="outline-text-2" id="text-16">
+
+
+</div>
+
+<div id="outline-container-16-1" class="outline-3">
+<h3 id="sec-16-1"><span class="section-number-3">16.1</span> proper error reporting:</h3>
+<div class="outline-text-3" id="text-16-1">
+
+<p>Letting the user know what happened when something went wrong!!!
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-16-2" class="outline-3">
+<h3 id="sec-16-2"><span class="section-number-3">16.2</span> produce json</h3>
+<div class="outline-text-3" id="text-16-2">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-3" class="outline-3">
+<h3 id="sec-16-3"><span class="section-number-3">16.3</span> markdown editor</h3>
+<div class="outline-text-3" id="text-16-3">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-4" class="outline-3">
+<h3 id="sec-16-4"><span class="section-number-3">16.4</span> embedded images</h3>
+<div class="outline-text-3" id="text-16-4">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-5" class="outline-3">
+<h3 id="sec-16-5"><span class="section-number-3">16.5</span> code highlighing</h3>
+<div class="outline-text-3" id="text-16-5">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-6" class="outline-3">
+<h3 id="sec-16-6"><span class="section-number-3">16.6</span> add editable pages to blog</h3>
+<div class="outline-text-3" id="text-16-6">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-7" class="outline-3">
+<h3 id="sec-16-7"><span class="section-number-3">16.7</span> some kind of automation, edit the site online, then produce js free version and</h3>
+<div class="outline-text-3" id="text-16-7">
+
+<p>push to github.io, using my commit.js file, just add ssh key to server I think
+serve blog from linode
+enable persona authentication
+add upload button:
+  gives render command to bb-blog in the nodejs mode
+  then syncs the www-nojs directory to github.michieljoris.io
+</p></div>
+
+</div>
+
+<div id="outline-container-16-8" class="outline-3">
+<h3 id="sec-16-8"><span class="section-number-3">16.8</span> enable authentication using persona</h3>
+<div class="outline-text-3" id="text-16-8">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-9" class="outline-3">
+<h3 id="sec-16-9"><span class="section-number-3">16.9</span> use delete button??</h3>
+<div class="outline-text-3" id="text-16-9">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-10" class="outline-3">
+<h3 id="sec-16-10"><span class="section-number-3">16.10</span> style ala current axion5.net</h3>
+<div class="outline-text-3" id="text-16-10">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-11" class="outline-3">
+<h3 id="sec-16-11"><span class="section-number-3">16.11</span> search</h3>
+<div class="outline-text-3" id="text-16-11">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-12" class="outline-3">
+<h3 id="sec-16-12"><span class="section-number-3">16.12</span> calculate proper teasers for posts, not just all or nothing if no teaser break is found</h3>
+<div class="outline-text-3" id="text-16-12">
+
+<p>  in bb-blog.js/retrieveTeaser 
+</p></div>
+
+</div>
+
+<div id="outline-container-16-13" class="outline-3">
+<h3 id="sec-16-13"><span class="section-number-3">16.13</span> create archive page and collapsed archive widget</h3>
+<div class="outline-text-3" id="text-16-13">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-14" class="outline-3">
+<h3 id="sec-16-14"><span class="section-number-3">16.14</span> <span class="done DONE">DONE</span> add to firstdoor</h3>
+<div class="outline-text-3" id="text-16-14">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-15" class="outline-3">
+<h3 id="sec-16-15"><span class="section-number-3">16.15</span> <span class="done DONE">DONE</span> filter out unpublished</h3>
+<div class="outline-text-3" id="text-16-15">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-16" class="outline-3">
+<h3 id="sec-16-16"><span class="section-number-3">16.16</span> <span class="done DONE">DONE</span> setting meta title for browser history and backward/forward buttons</h3>
+<div class="outline-text-3" id="text-16-16">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-17" class="outline-3">
+<h3 id="sec-16-17"><span class="section-number-3">16.17</span> <span class="done DONE">DONE</span> unique posts!!!</h3>
+<div class="outline-text-3" id="text-16-17">
+
+<p>Don't overwrite old posts when creating new posts or renaming them
+When saving post, check for uniques of 'file' first, if not unique add number
+to it, till unique file name is found, then check for uniqueness of slug. If
+not unique send back error, and don't save the file!!!
+</p></div>
+
+</div>
+
+<div id="outline-container-16-18" class="outline-3">
+<h3 id="sec-16-18"><span class="section-number-3">16.18</span> <span class="done DONE">DONE</span> remove stale html pages in www,</h3>
+<div class="outline-text-3" id="text-16-18">
+
+<p>when renaming old slug.html remain
+</p></div>
+
+</div>
+
+<div id="outline-container-16-19" class="outline-3">
+<h3 id="sec-16-19"><span class="section-number-3">16.19</span> <span class="done DONE">DONE</span> add new page</h3>
+<div class="outline-text-3" id="text-16-19">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-20" class="outline-3">
+<h3 id="sec-16-20"><span class="section-number-3">16.20</span> <span class="done DONE">DONE</span> add date to post</h3>
+<div class="outline-text-3" id="text-16-20">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-21" class="outline-3">
+<h3 id="sec-16-21"><span class="section-number-3">16.21</span> <span class="done DONE">DONE</span> add comments</h3>
+<div class="outline-text-3" id="text-16-21">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-22" class="outline-3">
+<h3 id="sec-16-22"><span class="section-number-3">16.22</span> <span class="done DONE">DONE</span> next/prev/last/first nav links on teaser pages</h3>
+<div class="outline-text-3" id="text-16-22">
+
+</div>
+
+</div>
+
+<div id="outline-container-16-23" class="outline-3">
+<h3 id="sec-16-23"><span class="section-number-3">16.23</span> <span class="done DONE">DONE</span> make sure blog with no posts still has a way to add more posts</h3>
+<div class="outline-text-3" id="text-16-23">
+
+<p>  Just open edit.html, produced by running bin/build 
+</p>
+
+
+</div>
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2014-10-19T13:26+0200</p>
+<p class="author">Author: michieljoris</p>
+<p class="creator"><a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>

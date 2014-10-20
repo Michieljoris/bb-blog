@@ -303,11 +303,9 @@ function pageNav(basePath, n, c) {
 //pageTitle is inserted in recipe
 //pages are blobs of html, and are inserted in recipe.
 function addPages(pageType, pageTitle, pages, basePath) {
-    // var toBeBuilt = [];
-    basePath = basePath.slice(settings.paths.www.length) || '/';
-    log('*************************',basePath);
+    // basePath = basePath.slice(settings.paths.www.length) || '/';
+    // log('*************************',basePath);
     return pages.map(function(page, i) {
-        // toBeBuilt.push(
         return function() {
             var path = i === 0 ?
                 Path.join(basePath, 'index.html') :
@@ -317,9 +315,7 @@ function addPages(pageType, pageTitle, pages, basePath) {
             return recipes[pageType].customize(pageTitle + pageNumber,
                                                page, path);
         };
-        // );
     });
-    // return toBeBuilt;
 }
 
 // <header>
@@ -365,7 +361,7 @@ function renderSite(posts,  file) {
             
         });
     // var postList = Object.keys(posts).map(function(k) { return posts[k]; });
-    log('rendering site', file, posts[file], published);
+    log('rendering site\n', file, posts[file], published);
     
     var archive = groupByYearMonth(published);
     // var unpublishedArchive = groupByYearMonth(unpublished);
@@ -391,7 +387,7 @@ function renderSite(posts,  file) {
         .forEach(function(page) {
             setWidgets(recipes[page].get(), widgets);
         });
-    log('Widgets made');
+    log._i('Widgets made');
     var toBeBuilt = [];
 
     //POST page(s),
@@ -446,18 +442,20 @@ function renderSite(posts,  file) {
         subPages = pagedTeasers(published.slice().reverse(), settings.pagination);
         basePath = settings.pages.landing.path || '';
         var outPath = Path.join(settings.paths.www, basePath);
-        log('outpath for landing:', outPath, settings.paths.www);
+        // log('-------------------outpath for landing:', outPath);
         toBeBuilt = toBeBuilt.concat(addPages("landing", 'Latest posts', subPages, outPath));
     }
 
     //TAG page(s)
     if (recipes.tag) {
-        if (settings.pages.tag.path)
-            fs.removeSync(Path.join(settings.paths.www, settings.pages.tag.path));
+        // if (settings.pages.tag.path)
         basePath = settings.pages.tag.path || 'tag';
+        fs.removeSync(Path.join(settings.paths.www, basePath));
         Object.keys(tags).forEach(function(tag) {
             var subPages = pagedTeasers(tags[tag], settings.pagination);
             var outPath = Path.join(settings.paths.www, basePath, tag);
+            
+            // log('---------------outpath for tag:', outPath);
             toBeBuilt = toBeBuilt.concat(addPages('tag', tag, subPages, outPath));
         });
         // subPages = pagedTeasers(postList, settings.pagination);
@@ -465,17 +463,19 @@ function renderSite(posts,  file) {
 
     //YEAR and MONTH page(s)
     if (recipes.archive){
-        if (settings.pages.archive.path)
-            fs.removeSync(Path.join(settings.paths.www, settings.pages.archive.path));
+        // if (settings.pages.archive.path)
         basePath = settings.pages.archive.path || 'archive';
+        fs.removeSync(Path.join(settings.paths.www, basePath));
         Object.keys(archive).forEach(function(year) {
             var postsByYear = [];
             Object.keys(archive[year]).forEach(function(month) {
-                log(year, month, archive);
+                // log(year, month, archive);
                 var postsByMonth = archive[year][month];
                 var subPages = pagedTeasers(postsByMonth, settings.pagination);
                 var outPath = Path.join(settings.paths.www, basePath,
                                         year, monthByName[month]);
+                
+                // log('------------------outpath for archive:', outPath);
                 toBeBuilt = toBeBuilt.concat(addPages('archive', monthByName[month] ,
                                                       subPages, outPath));
                 postsByYear = postsByYear.concat(archive[year][month]);
@@ -490,7 +490,7 @@ function renderSite(posts,  file) {
     // if (recipes.archive) {
 
     // }
-    log('Rendering blog pages');
+    log._i('Rendering blog pages');
 
     function recur() {
         if (toBeBuilt.length) {
@@ -552,7 +552,6 @@ function fetchRecipe(pageType) {
             return fromObj;
         }
     };
-    
 }
 
 //default recipe preparer:
@@ -591,17 +590,21 @@ var recipePreparers = {
     // ,archive : prepareRecipe
 };
 
-
 module.exports = {
     //
     init: function(someSettings) {
         settings = someSettings;
-        //TODO do the same for landing,archive and tag:
-        if (typeof settings.pages.post === 'string')
-            settings.pages.post = { path: settings.pages.post }; 
-        else if (settings.pages.post && typeof settings.pages.post === 'boolean')
-            settings.pages.post = { path: 'post' }; 
-        if (!settings.pages.post.ext) settings.pages.post.ext = '';
+        //Make sure path is set for all pages, except for landing pages (index.html etc).
+        ['post', 'archive', 'tag', 'unpublished'].forEach(function(page) {
+            if (typeof settings.pages[page] === 'string')
+                settings.pages[page] = { path: settings.pages[page] }; 
+            else if (settings.pages[page] && typeof settings.pages[page] === 'boolean')
+                settings.pages[page] = { path: page }; 
+            //only landing pages can be at the www root dir:
+            if (!settings.pages[page].path.length)
+                settings.pages[page].path = page;
+        });
+        if (!settings.pages.post.ext) settings.pages.post.ext = '.html';
         
         recipes = {};
         recipeCache = {};
@@ -620,8 +623,3 @@ module.exports = {
     },
     renderSite: renderSite
 };
-
-
-
-
-
