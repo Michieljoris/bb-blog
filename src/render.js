@@ -56,7 +56,8 @@ function groupByYearMonth(postList, filterAttr) {
     return archive;
 }
 
-//returns list of html blobs, with each blob containing a max of n number of teasers
+//returns list of html blobs, with each blob containing a max of n number of
+//teasers
 function pagedTeasers(posts, n) {
     function postIterator(posts, n) {
         return function() {
@@ -509,7 +510,6 @@ function renderSite(posts,  file) {
 }
 
 //-----------------init-------------------------
-
 //fetches appropriate recipe for a pageType (archive/post/landing/tag).
 //the recipe can be had by calling get on the returned object and
 //customized to some degree by calling customize on the returned object

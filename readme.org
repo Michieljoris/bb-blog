@@ -29,6 +29,19 @@ for html-builder are properly set, one command (render) to the server will
 build the site. By configuring the recipes and adding the right fragments to
 the build directory a site can be built that is more than just a blog.
 
+Html-builder is able to take any html fragment (from disk or inline in the
+recipe), build more fragments out of them and then output a html file again for
+any of them. All bb-blog does really is create html fragments out of
+posts. These fragments are the posts themselves, collection pages
+(tag/archive/landing) and widgets (tag, recent, archive, unpublished). This
+means that in bb-blog's configuration you need to specify where you want these
+fragments inserted. This is the =from= object path into the recipe (see
+configuration example below). You also want to specify where you want to save
+the resulting file. This is the =to= object path into the recipe. Furthermore
+bb-blog will add html fragments into the recipe under the names of recentWidget,
+archiveWidget, tagWidget and unpublishedWidget. You can use these fragments in
+the recipe to build other fragments.
+
 Example configuration: 
 
 #+begin_src javascript
