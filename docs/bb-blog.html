@@ -27,9 +27,1307 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
-              <p>Empty source file</p>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> Path = <span class="hljs-built_in">require</span>(<span class="hljs-string">'path'</span>);
+<span class="hljs-built_in">require</span>(<span class="hljs-string">'logthis'</span>).config({ _on: <span class="hljs-literal">true</span>, <span class="hljs-string">'render.js'</span>: <span class="hljs-string">'debug'</span>, <span class="hljs-string">'bb-blog.js'</span>: <span class="hljs-string">'debug'</span> });
+<span class="hljs-keyword">var</span> log = <span class="hljs-built_in">require</span>(<span class="hljs-string">'logthis'</span>).logger._create(Path.basename(__filename));
+
+<span class="hljs-built_in">require</span>(<span class="hljs-string">'datejs'</span>);
+<span class="hljs-keyword">var</span> extend = <span class="hljs-built_in">require</span>(<span class="hljs-string">'extend'</span>);
+<span class="hljs-keyword">var</span> util = <span class="hljs-built_in">require</span>(<span class="hljs-string">'util'</span>);
+<span class="hljs-keyword">var</span> VOW = <span class="hljs-built_in">require</span>(<span class="hljs-string">'dougs_vow'</span>);
+<span class="hljs-keyword">var</span> fs = <span class="hljs-built_in">require</span>(<span class="hljs-string">'fs-extra'</span>);
+<span class="hljs-keyword">var</span> sluggify = <span class="hljs-built_in">require</span>(<span class="hljs-string">'speakingurl'</span>);
+
+<span class="hljs-keyword">var</span> render = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./render'</span>);
+
+<span class="hljs-keyword">var</span> settings;
+<span class="hljs-keyword">var</span> posts = {};
+<span class="hljs-keyword">var</span> publishedat;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>client should call location.pathname = pathname</p>
 
             </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">sendResponse</span><span class="hljs-params">(res, err, pathname)</span> </span>{
+    <span class="hljs-keyword">var</span> headers = {<span class="hljs-string">'Content-Type'</span>: <span class="hljs-string">'text/html'</span>};
+    <span class="hljs-keyword">var</span> returnCode = <span class="hljs-number">403</span>;
+    <span class="hljs-keyword">var</span> descr = err;
+    <span class="hljs-keyword">if</span> (!err) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>var expireDate = new Date(new Date().getTime() + 24<em>60</em>60).toUTCString();
+headers[‘Set-Cookie’] = ‘persona=’ +obj.email + ‘; expires=’ + expireDate;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        returnCode = <span class="hljs-number">200</span>;
+        descr = <span class="hljs-string">"OK"</span>;
+    }
+    res.writeHead(returnCode, descr, headers);
+    res.write(<span class="hljs-built_in">JSON</span>.stringify({ success: !err, error: err, pathname: pathname}));
+    res.end();
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">gatherData</span><span class="hljs-params">(req)</span> </span>{
+    <span class="hljs-keyword">var</span> vow = VOW.make();
+    <span class="hljs-keyword">var</span> data = <span class="hljs-string">''</span>;
+    req.on(<span class="hljs-string">'data'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(chunk)</span> </span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>console.log(“received data!! And the chunk is:”, chunk);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        data+=chunk;
+    });
+
+    req.on(<span class="hljs-string">'error'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(e)</span> </span>{
+        log._e(<span class="hljs-string">'error on req!!!'</span>, e);
+        vow[<span class="hljs-string">'break'</span>](<span class="hljs-string">'Error on req '</span> + e.toString());
+    });
+
+    req.on(<span class="hljs-string">'end'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> </span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>console.log(‘received all data’);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        vow.keep(data);
+    });
+    <span class="hljs-keyword">return</span> vow.promise;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">saveFile</span><span class="hljs-params">(path, data)</span> </span>{
+    log(<span class="hljs-string">'Saving: '</span>, path);
+    <span class="hljs-keyword">var</span> vow = VOW.make();
+    path = Path.join(settings.paths.base || <span class="hljs-string">''</span>, path);
+    <span class="hljs-keyword">var</span> callback = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(err)</span> </span>{
+        <span class="hljs-keyword">if</span>(err) {
+            log._e(<span class="hljs-string">'ERROR!!!'</span>, err);
+            vow[<span class="hljs-string">'break'</span>](<span class="hljs-string">'Error trying to save/remove file '</span> + err.toString());
+        } <span class="hljs-keyword">else</span> {
+            log(<span class="hljs-string">"The file was saved/removed!"</span>);
+            vow.keep();
+        }
+    };
+    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> data !== <span class="hljs-string">'undefined'</span>)
+        fs.outputFile(path, data, callback);
+    <span class="hljs-keyword">else</span> fs.remove(path, callback);
+    <span class="hljs-keyword">return</span> vow.promise;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">parseValue</span><span class="hljs-params">(key, value)</span> </span>{
+    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> value === <span class="hljs-string">"undefined"</span>) <span class="hljs-keyword">return</span> <span class="hljs-literal">undefined</span>;
+    <span class="hljs-keyword">var</span> booleans = {
+        <span class="hljs-string">'yes'</span>: <span class="hljs-literal">true</span>, <span class="hljs-string">'no'</span>: <span class="hljs-literal">false</span>, <span class="hljs-string">'true'</span>: <span class="hljs-literal">true</span>, <span class="hljs-string">'false'</span>: <span class="hljs-literal">false</span>, <span class="hljs-string">'0'</span>: <span class="hljs-literal">false</span>, <span class="hljs-string">'1'</span>: <span class="hljs-literal">true</span> };
+    <span class="hljs-keyword">switch</span>(key) {
+      <span class="hljs-keyword">case</span> <span class="hljs-string">'tags'</span>:
+      <span class="hljs-keyword">case</span> <span class="hljs-string">'categories'</span>:
+        <span class="hljs-keyword">return</span> value
+            .replace(<span class="hljs-regexp">/,/g</span>,<span class="hljs-string">' '</span>)
+            .split(<span class="hljs-string">' '</span>)
+            .filter(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(tag)</span> </span>{
+                <span class="hljs-keyword">return</span> tag.trim().length;  
+            });
+      <span class="hljs-keyword">case</span> <span class="hljs-string">'publishedat'</span>: <span class="hljs-keyword">return</span> <span class="hljs-built_in">Date</span>.parse(value);
+      <span class="hljs-keyword">case</span> <span class="hljs-string">'delete'</span> :
+      <span class="hljs-keyword">case</span> <span class="hljs-string">'published'</span> :
+      <span class="hljs-keyword">case</span> <span class="hljs-string">'comments'</span> : <span class="hljs-keyword">return</span> booleans[value.toLowerCase()];
+    <span class="hljs-keyword">default</span>: <span class="hljs-keyword">return</span> value;
+    };
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getPreBlocks</span><span class="hljs-params">(str)</span> </span>{
+    <span class="hljs-keyword">var</span> idx = <span class="hljs-number">0</span>;
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">nextPreBlock</span><span class="hljs-params">()</span> </span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>opening</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">var</span> check = str.indexOf(<span class="hljs-string">'&lt;/pre&gt;'</span>, idx);
+        idx = str.indexOf(<span class="hljs-string">'&lt;pre&gt;'</span>, idx);
+        <span class="hljs-keyword">if</span> (idx === -<span class="hljs-number">1</span>) <span class="hljs-keyword">return</span> -<span class="hljs-number">1</span>;;
+        <span class="hljs-keyword">if</span> (check !== -<span class="hljs-number">1</span> &amp;&amp; check &lt; idx)
+            log._e(<span class="hljs-string">'Expecting opening &lt;pre&gt;, found closing &lt;/pre&gt;, ignoring'</span>.red);
+        <span class="hljs-keyword">if</span> (check === -<span class="hljs-number">1</span>) log._e(<span class="hljs-string">'Missing closing &lt;/pre&gt;'</span>.red);
+        <span class="hljs-keyword">var</span> start = idx;
+            idx+=<span class="hljs-number">5</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>closing</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        check = str.indexOf(<span class="hljs-string">'&lt;pre&gt;'</span>, idx);
+        idx = str.indexOf(<span class="hljs-string">'&lt;/pre&gt;'</span>, idx);
+        <span class="hljs-keyword">if</span> (idx === -<span class="hljs-number">1</span>) <span class="hljs-keyword">return</span> -<span class="hljs-number">1</span>;
+        <span class="hljs-keyword">if</span> (check !== -<span class="hljs-number">1</span> &amp;&amp; check &lt; idx)
+            log._e(<span class="hljs-string">'Expecting closing &lt;/pre&gt;, found opening &lt;pre&gt;, ignoring'</span>.red);
+        idx +=<span class="hljs-number">5</span>;
+        <span class="hljs-keyword">var</span> end = idx;
+        <span class="hljs-keyword">return</span> { start: start, end: end };
+    }
+
+    <span class="hljs-keyword">var</span> result = [];
+    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> str === <span class="hljs-string">'string'</span>) {
+        <span class="hljs-keyword">var</span> pre = nextPreBlock();
+        <span class="hljs-keyword">while</span> (pre !== -<span class="hljs-number">1</span>) {
+            result.push(pre);
+            pre = nextPreBlock();
+        }
+    }
+    <span class="hljs-keyword">return</span> result;
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Takes a str and tries to retrieve metadata from the first <pre> block it finds</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">parseMetaData</span><span class="hljs-params">(metaStr, defaults)</span> </span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>var regexp = /<pre>([^]*)&lt;\/pre&gt;/;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> meta = extend({ <span class="hljs-comment">//published: false,</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>title: postFileName.slice(0, postFileName.lastIndexOf(‘.’)),
+created: new Date(),
+published: new Date(),</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                        tags: [],
+                        categories: []</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>comments: false</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                      }, defaults || {});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>var metaText = regexp.exec(str);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (metaStr) {
+        metaStr.split(<span class="hljs-string">'\n'</span>)
+            .filter(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(line)</span> </span>{
+                <span class="hljs-keyword">return</span> line.length; })
+            .forEach(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(line)</span> </span>{
+                <span class="hljs-keyword">var</span> keyValue = line.split(<span class="hljs-string">':'</span>).map(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(part)</span> </span>{
+                    <span class="hljs-keyword">return</span> part.trim();
+                });
+                keyValue[<span class="hljs-number">0</span>] = keyValue[<span class="hljs-number">0</span>].toLowerCase();
+                meta[keyValue[<span class="hljs-number">0</span>]] = parseValue(keyValue[<span class="hljs-number">0</span>], keyValue[<span class="hljs-number">1</span>]);
+
+            });
+    }
+    <span class="hljs-keyword">return</span> meta;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">retrieveTeaser</span><span class="hljs-params">(str, preBlocks)</span> </span>{
+    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> str !== <span class="hljs-string">'string'</span>) <span class="hljs-keyword">return</span> <span class="hljs-string">''</span>;
+    <span class="hljs-keyword">var</span> regexp = <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">'^\\s*---+\\s*$'</span>);
+    <span class="hljs-keyword">var</span> start, end;
+    start = preBlocks[<span class="hljs-number">0</span>] ? preBlocks[<span class="hljs-number">0</span>].end + <span class="hljs-number">1</span> : <span class="hljs-number">0</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>end = start + 10;
+TODO just take a paragraph or two instead of the whole post…
+but we need to parse the html for it and look for <p></p> blocks then..</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    end = str.length;
+    <span class="hljs-keyword">var</span> sepBlock = preBlocks[<span class="hljs-number">1</span>] ? preBlocks[<span class="hljs-number">1</span>] : preBlocks[<span class="hljs-number">0</span>];
+    <span class="hljs-keyword">if</span> (sepBlock) {
+        <span class="hljs-keyword">var</span> separator = str.slice(sepBlock.start + <span class="hljs-number">5</span>, sepBlock.end -<span class="hljs-number">5</span>);
+        <span class="hljs-keyword">var</span> isSeperator = regexp.test(separator);
+        <span class="hljs-keyword">if</span> (isSeperator) end = sepBlock.start;
+    }
+    <span class="hljs-keyword">return</span> str.slice(start, end);
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>Parses raw post data and returns meta string and teaser string;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">parsePost</span><span class="hljs-params">(post)</span> </span>{
+    <span class="hljs-keyword">var</span> preBlocks = getPreBlocks(post);
+    <span class="hljs-keyword">var</span> metaBlock = preBlocks[<span class="hljs-number">0</span>];
+    <span class="hljs-keyword">return</span> {
+        metaStr: metaBlock ? post.slice(metaBlock.start + <span class="hljs-number">5</span>, metaBlock.end - <span class="hljs-number">5</span>) : <span class="hljs-string">''</span>,
+        teaser: retrieveTeaser(post, preBlocks) };
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>parses a flat folder and returns an object of objects containing filename and
+metadata for each file, sets publish prop according to path</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">createIndex</span><span class="hljs-params">(dir)</span> </span>{
+    log(<span class="hljs-string">'creating listing for dir:'</span>, dir);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>var publish = Path.basename(dir) !== settings.unpublished;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> files = fs.readdirSync(dir);
+    <span class="hljs-keyword">var</span> listing = {};
+    files.forEach(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(file)</span> </span>{
+        <span class="hljs-keyword">var</span> fullPath =  Path.join(dir, file);
+        <span class="hljs-keyword">var</span> stat = fs.statSync(fullPath);
+        <span class="hljs-keyword">if</span> (!stat.isFile()) <span class="hljs-keyword">return</span>;
+        <span class="hljs-keyword">var</span> post = fs.readFileSync(fullPath, { encoding: <span class="hljs-string">'utf8'</span> });
+        post = parsePost(post);
+        <span class="hljs-keyword">var</span> title = file.slice(<span class="hljs-number">0</span>, file.lastIndexOf(<span class="hljs-string">'.'</span>));
+        listing[file] =</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>extend({ fileName: fullPath } ,</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            parseMetaData(post.metaStr,
+                          { createdAt: stat.ctime,
+                            teaser: post.teaser,
+                            title: title
+                          });
+        <span class="hljs-keyword">if</span> (listing[file].published &amp;&amp; !publishedat[file]) {
+            listing[file].publishedat =
+                publishedat[file] = listing[file].publishedat || <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>();
+        }
+        listing[file].file = file;
+        listing[file].slug = sluggify(listing[file].title);
+    });
+    log(<span class="hljs-string">'writing publishedat.json'</span>);
+    fs.writeJsonSync(Path.join(settings.paths.base, settings.publishedat), publishedat);
+    <span class="hljs-keyword">return</span> listing;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">writeIndexJson</span><span class="hljs-params">(dir, fileName, data, outDir)</span> </span>{
+    log(dir, fileName);
+    <span class="hljs-keyword">var</span> vow = VOW.make();
+    log(dir);
+    log(<span class="hljs-string">'Saving json of dir contents to '</span> + Path.resolve(outDir, <span class="hljs-string">'index.json'</span>));
+    <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">if</span> (!posts)  posts = createIndex(dir);
+        <span class="hljs-keyword">else</span> {
+            posts[fileName] = extend({ fileName: Path.join(dir, fileName) },
+                                     parseMetaData(data));
+        }
+        fs.outputJsonSync(Path.join(outDir, <span class="hljs-string">'index.json'</span>), posts);
+        vow.keep();
+    } <span class="hljs-keyword">catch</span>(e) {
+        vow.breek(e);
+    }
+    <span class="hljs-keyword">return</span> vow.promise;
+}
+
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">processMeta</span><span class="hljs-params">(meta)</span> </span>{
+    <span class="hljs-keyword">var</span> old = posts[meta.file];
+    log(meta);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>delete
+if (posts[meta.file] &amp;&amp; meta.delete) {</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (meta.delete) {
+        fs.removeSync(Path.join(settings.paths.base, settings.paths.posts, meta.file));
+        fs.removeSync(Path.join(settings.paths.www,
+                                settings.pages.post.path, sluggify(meta.title) + <span class="hljs-string">'.html'</span>));
+        <span class="hljs-keyword">delete</span> posts[meta.file];
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>clear out www/post if new post, deleted post or title has changed.
+since we’re now going to have to regenerate all of them with new widgets</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!old || meta.delete || old.title !== meta.title) {
+        log(<span class="hljs-string">'------------removing all posts in www/post'</span>);
+        fs.removeSync(Path.join(settings.paths.www, settings.pages.post.path));
+    }
+        
+    <span class="hljs-keyword">if</span> (old &amp;&amp; old.title !== meta.title) {
+        fs.removeSync(Path.join(settings.paths.www, settings.pages.post.path,
+                                old.slug +  <span class="hljs-string">'.html'</span>));
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>//publish</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (meta.published &amp;&amp; (!posts[meta.file] ||
+                           (!posts[meta.file].published &amp;&amp; !publishedat[meta.file])
+                          ))
+        publishedat[meta.file] = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>title</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    meta.title = meta.title || meta.file.slice(<span class="hljs-number">0</span>, meta.file.lastIndexOf(<span class="hljs-string">'.'</span>));</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>meta.slug = sluggify(meta.title);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    meta.publishedat = meta.publishedat || publishedat[meta.file];
+    meta.createdAt = posts[meta.file] ? posts[meta.file].createdAt : <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>();
+    posts[meta.file] = meta;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isUniqueSlug</span><span class="hljs-params">(slug)</span> </span>{
+    <span class="hljs-keyword">try</span> {
+      fs.statSync(Path.join(settings.paths.www, settings.pages.post.path, slug + <span class="hljs-string">'.html'</span>));
+    } <span class="hljs-keyword">catch</span> (e) { <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; };
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>1 new file
+2 updating file
+3 deleting file</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getUID</span><span class="hljs-params">(len)</span></span>{
+    <span class="hljs-keyword">var</span> chars = <span class="hljs-string">'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'</span>,
+          out = <span class="hljs-string">''</span>;
+    <span class="hljs-keyword">var</span> n = <span class="hljs-built_in">Math</span>.pow(chars.length, len);
+
+    <span class="hljs-keyword">for</span>(<span class="hljs-keyword">var</span> i=<span class="hljs-number">0</span>, clen=chars.length; i&lt;len; i++){
+       out += chars.substr(<span class="hljs-number">0</span>|<span class="hljs-built_in">Math</span>.random() * clen, <span class="hljs-number">1</span>);
+    }
+     <span class="hljs-keyword">return</span> out;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">processPost</span><span class="hljs-params">(req, action)</span> </span>{
+    <span class="hljs-keyword">var</span> meta;
+    <span class="hljs-keyword">var</span> file = Path.basename(req.path);
+    <span class="hljs-keyword">return</span> (<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">postParser</span><span class="hljs-params">()</span> </span>{
+        <span class="hljs-keyword">try</span> { meta = parsePost(req.data);
+              <span class="hljs-keyword">var</span> title = file.slice(<span class="hljs-number">0</span>, file.lastIndexOf(<span class="hljs-string">'.'</span>));
+              meta = parseMetaData(meta.metaStr,
+                                   { teaser: meta.teaser,
+                                     title: title
+                                   });
+              meta.file = file;
+              meta.slug = sluggify(meta.title);
+              log(<span class="hljs-string">'meta:'</span>, meta);
+            
+            } <span class="hljs-keyword">catch</span>(e) { <span class="hljs-keyword">return</span> VOW.broken(e); }
+        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> req.data === <span class="hljs-string">'undefined'</span>)  {
+            meta.delete = <span class="hljs-literal">true</span>;   
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!meta.delete) {
+            log(<span class="hljs-string">'data received'</span>, req.data, req.new);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>make sure a new post has a unique ‘file’ name in build/post</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">if</span> (req.new &amp;&amp; posts[meta.file]) {
+                file = meta.file = meta.file.slice(<span class="hljs-number">0</span>, meta.file.lastIndexOf(<span class="hljs-string">'.'</span>)) +
+                    <span class="hljs-string">'_'</span> + getUID(<span class="hljs-number">6</span>) + Path.extname(meta.file);
+                req.path = Path.join(settings.paths.posts, meta.file);
+                meta._all = <span class="hljs-literal">true</span>;
+            }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p>make sure any new posts or retitled posts are have unique titles:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">if</span> (
+                (req.new || (posts[file] &amp;&amp; posts[file].title !== meta.title)) &amp;&amp;
+                    !isUniqueSlug(meta.slug)
+            ) <span class="hljs-keyword">return</span> VOW.broken({
+                msg: <span class="hljs-string">'The title does not generate a unique url for the post'</span>});
+            <span class="hljs-keyword">else</span> <span class="hljs-keyword">return</span> saveFile(req.path, req.data); 
+        }
+        <span class="hljs-keyword">return</span> VOW.kept();
+    }()).when(
+        <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> </span>{
+            log(<span class="hljs-string">'Rendering site after saving/removing post: '</span>, req.path);
+            <span class="hljs-keyword">try</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p>var old = posts[meta.file];</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                file = processMeta(meta);
+            } <span class="hljs-keyword">catch</span> (e) { <span class="hljs-keyword">return</span> VOW.broken(e); }
+            <span class="hljs-keyword">return</span> render.renderSite(posts, file);
+        })
+        .when(
+            <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> </span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <p>return path for the client to load when receiving response</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                <span class="hljs-keyword">if</span> (action === <span class="hljs-string">'new'</span>)
+                    <span class="hljs-keyword">return</span> Path.join(settings.pages.unpublished.path, meta.slug);
+                <span class="hljs-keyword">if</span> (action === <span class="hljs-string">'save'</span>) <span class="hljs-keyword">return</span> Path.join(
+                    !meta.published ?
+                        settings.pages.unpublished.path :
+                        settings.pages.post.path,
+                    meta.slug);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p>if (action === ‘delete’) return settings.paths.blog;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                <span class="hljs-keyword">return</span> settings.paths.blog ? settings.paths.blog : <span class="hljs-literal">false</span>;
+            }
+        );
+                    
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>API———————————-</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">handleRequest</span><span class="hljs-params">(req, res, action)</span> </span>{
+    log(<span class="hljs-string">"handleRequest is handling post!!"</span>, settings, action);
+
+    <span class="hljs-keyword">return</span> req.session.get()
+        .when(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(session)</span></span>{
+            log(<span class="hljs-string">'session data is: '</span> , session);
+            <span class="hljs-keyword">if</span> (settings.auth &amp;&amp; (!session.data || !session.data.verified))
+                <span class="hljs-keyword">return</span> VOW.broken(<span class="hljs-string">'Not authorized.'</span>);
+            <span class="hljs-keyword">if</span> (action === <span class="hljs-string">'save'</span> || action === <span class="hljs-string">'new'</span>) <span class="hljs-keyword">return</span> gatherData(req);
+            <span class="hljs-keyword">else</span> <span class="hljs-keyword">return</span> VOW.kept();
+        })
+        .when(
+            <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(someData)</span> </span>{
+                req.path = req.url.query &amp;&amp; req.url.query.path;
+                <span class="hljs-keyword">if</span> (!req.path &amp;&amp; ! req.someData)
+                    <span class="hljs-keyword">return</span> render.renderSite(posts);
+                req.data = someData;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <p>log(‘————————————-‘, someData);
+only save/remove at valid ‘paths’</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                <span class="hljs-keyword">var</span> isValidPath = settings.writable.some(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(p)</span> </span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>var valid = req.path.indexOf(p + ‘/‘) === 0;
+if (valid) req.key = req.path.slice(p.length+1);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                    <span class="hljs-keyword">return</span> req.path.indexOf(p + <span class="hljs-string">'/'</span>) === <span class="hljs-number">0</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>return valid;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                });</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <p>process post if path matches</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                <span class="hljs-keyword">if</span> (action === <span class="hljs-string">'new'</span>) req.new = <span class="hljs-literal">true</span>;
+                <span class="hljs-keyword">return</span> isValidPath ?
+                    (req.path.indexOf(settings.paths.posts) === <span class="hljs-number">0</span> ?
+                     processPost(req, action) : saveFile(req.path, req.data)) :
+                VOW.broken(<span class="hljs-string">'Not a valid path: '</span> + req.path);
+                    
+            })
+        .when(
+            <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(pathname)</span> </span>{
+                log(<span class="hljs-string">'sending response, all good, pathname:'</span>, pathname);
+                sendResponse(res, <span class="hljs-literal">null</span>, pathname);
+            },
+            <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(err)</span> </span>{
+                log(<span class="hljs-string">'sending response, ERROR!'</span>, err);
+                sendResponse(res, err);
+            }
+        );
+};</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+              <p>Any of these settings can be overridden by calling the init function on this
+module and passing different values. Any values not defined are taken from
+this set of defaults</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> defaults = {
+    paths: {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-35">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+              <p>Base path to directory with source files for html-builder:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        base: <span class="hljs-string">'build'</span>,</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-36">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-36">&#182;</a>
+              </div>
+              <p>Path where posts are saved, relative to paths.base:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        posts: <span class="hljs-string">'post'</span>,</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
+              </div>
+              <p>Path to directory served to internet:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        www: <span class="hljs-string">'www'</span>,</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-38">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-38">&#182;</a>
+              </div>
+              <p>Path where widgets are found, relative to www</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        widgets: <span class="hljs-string">'widget'</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-39">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-39">&#182;</a>
+              </div>
+              <p>Bb-blog saves data to the server, this limits which paths it is
+allowed to save to. This is relative to the paths.base path.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,writable: [<span class="hljs-string">'editable'</span>, <span class="hljs-string">'post'</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-40">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-40">&#182;</a>
+              </div>
+              <p>Whether to check for session.data.verified === true, set to false for
+testing purpose</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,auth: <span class="hljs-literal">true</span>,</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-41">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-41">&#182;</a>
+              </div>
+              <p>Number of teasers/posts per page on collection pages such as landing,
+archive and tag.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    pagination: <span class="hljs-number">3</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-42">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-42">&#182;</a>
+              </div>
+              <p>Recent, archive and tag widget
+You would set save to true if you want to pull these widgets in ajax calls
+to build a page dynamically on the client, they get saved to path set in
+paths above, max refers to number blog titles listed in a widget</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,widgets: {
+        recent: { max: <span class="hljs-number">3</span>, save: <span class="hljs-literal">false</span> } ,archive: { save: <span class="hljs-literal">false</span> } ,tag: { max: <span class="hljs-number">3</span> }
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-43">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-43">&#182;</a>
+              </div>
+              <p>If set to true, whether comments are enabled are decided per post,
+depending on what the setting is in the post’s metadata. </p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,enableCommentsPerPost: <span class="hljs-literal">true</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-44">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-44">&#182;</a>
+              </div>
+              <p>Global comment setting, only effective if previous setting is set to
+false, set both to false to disable comments alltogether</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,comments: <span class="hljs-literal">true</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-45">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-45">&#182;</a>
+              </div>
+              <p>A recipe (string) or a list of recipes used to build pages unless
+overridden for a page in the particular pages prop below.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,recipe: { editable: <span class="hljs-string">'recipe.js'</span>, nojs: <span class="hljs-string">'recipe.js'</span> }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-46">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-46">&#182;</a>
+              </div>
+              <p>If the previous prop is a list the following prop decides which recipe in
+the list is used. This should be one of the keys of the previous prop.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,renderMode: <span class="hljs-string">'editable'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-47">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-47">&#182;</a>
+              </div>
+              <p>Default path into a recipe to where bb-blog is to insert its payload
+(post, archive/tag/landing teaser list etc), can also be overridden for
+any particular page by adding this setting to it, eg to pages.post.from</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,from: [ <span class="hljs-string">'fromTemplate'</span>, <span class="hljs-string">'mapping'</span>, <span class="hljs-string">'main'</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-48">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-48">&#182;</a>
+              </div>
+              <p>Default object path into a recipe to where bb-blog is to insert the out
+path for a particular page, for instance pages.post.path gets inserted
+here when building a post page. Can be set per page as well.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,to: [ <span class="hljs-string">'toTemplate'</span>, <span class="hljs-string">'out'</span> ]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-49">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-49">&#182;</a>
+              </div>
+              <p>For keeping track of when first published. Can be overridden by adding
+publishedat metadata to a post, no need to modify. TODO Maybe should be
+removed from here..</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,publishedat: <span class="hljs-string">'publishedat.json'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-50">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-50">&#182;</a>
+              </div>
+              <p>Bb-blog can build collections of posts, organised by tag, year/month,
+unpublished status and just all of them in reverse chronological order
+(landing). Other than that it can build a page for every post as well. Set
+any of the following to false to prevent the page(s) from being build. Or
+assign an object specifying path to save the pages to (relative to
+base.www) and/or a recipe to use to build the page. A full example set of
+props is given for the archive page. All pages can also just be set to
+true or false, or a string for a path.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,pages: {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-51">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-51">&#182;</a>
+              </div>
+              <p>Landing page with all teasers of posts (paginated).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        landing: <span class="hljs-literal">true</span>,</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-52">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-52">&#182;</a>
+              </div>
+              <p>Archive pages. Teasers of posts listed by years and months. </p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        archive: { path: <span class="hljs-string">'archive'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-53">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-53">&#182;</a>
+              </div>
+              <p>,recipe: ‘some archive recipe’  //or:
+,recipe: { editable: ‘recipe.js’, nojs: ‘recipe.js’ }
+,from: [ ‘fromTemplate’, ‘mapping’, ‘main’]
+,to: [ ‘toTemplate’, ‘out’ ]</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                 },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-54">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-54">&#182;</a>
+              </div>
+              <p>List of teasers of posts, listed by tag. </p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        tag: { path: <span class="hljs-string">'tag'</span> },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-55">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-55">&#182;</a>
+              </div>
+              <p>A page with a post</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        post: { path: <span class="hljs-string">'post'</span> },</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-56">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-56">&#182;</a>
+              </div>
+              <p>Any unpublished posts will be added to the unpublished folder, not to
+the post folder. Only prop that can be set is the path.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        unpublished: { path: <span class="hljs-string">'unpublished'</span> }
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-57">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-57">&#182;</a>
+              </div>
+              <p>NOT TESTED
+Json of list of posts on server. Also set whether to add precalculated
+lists. Set to false to disable producing this json. Can be used by client
+to dynamically build a blog.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,json: { byTag: <span class="hljs-literal">true</span>, byYearMonth: <span class="hljs-literal">true</span>, byReverseDate: <span class="hljs-literal">true</span> }
+};
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">myExtend</span><span class="hljs-params">(a, b)</span> </span>{
+    <span class="hljs-keyword">var</span> obj = {};
+    <span class="hljs-built_in">Object</span>.keys(a).forEach(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(key)</span> </span>{
+        obj[key] = a[key];
+    });
+    <span class="hljs-built_in">Object</span>.keys(b).forEach(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(key)</span> </span>{
+        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> a[key] === <span class="hljs-string">'object'</span> &amp;&amp; !util.isArray(b[key]) &amp;&amp; 
+            <span class="hljs-keyword">typeof</span> b[key] === <span class="hljs-string">'object'</span> &amp;&amp; !util.isArray(b[key])) {
+            obj[key] = myExtend(a[key], b[key]);
+        }
+        <span class="hljs-keyword">else</span> obj[key] = b[key];
+    });
+    <span class="hljs-keyword">return</span> obj;
+    
+}
+
+<span class="hljs-built_in">module</span>.exports = {
+    init: <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">init</span><span class="hljs-params">(someSettings)</span> </span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-58">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-58">&#182;</a>
+              </div>
+              <p>settings = myExtend(defaults, someSettings, true);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        
+        settings = extend(<span class="hljs-literal">true</span>, defaults, someSettings);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-59">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-59">&#182;</a>
+              </div>
+              <p>log(util.inspect(settings, { depth:10, colors:true }));
+log(‘someSettings’, util.inspect(someSettings, { depth:10, colors:true }));</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">try</span> {
+            publishedat = fs.readJsonSync(Path.join(settings.paths.base, settings.publishedat));
+        } <span class="hljs-keyword">catch</span> (e) { publishedat = {}; }
+        fs.ensureDirSync(Path.join(settings.paths.base, settings.paths.posts));
+        posts = createIndex(Path.join(settings.paths.base, settings.paths.posts));
+        log(util.inspect(posts, { depth:<span class="hljs-number">10</span>, colors:<span class="hljs-literal">true</span> }));
+        render.init(settings);
+    },
+    save: <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span> </span>{ handleRequest(req, res, <span class="hljs-string">'save'</span>); },
+    <span class="hljs-keyword">new</span>: <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span> </span>{ handleRequest(req, res, <span class="hljs-string">'new'</span>); },
+    remove: <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span> </span>{ handleRequest(req, res, <span class="hljs-string">'remove'</span>); },
+    render: <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span> </span>{ handleRequest(req, res); }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-60">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-60">&#182;</a>
+              </div>
+              <p>,sendResponse: sendResponse</p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-61">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-61">&#182;</a>
+              </div>
+              <p>,writeIndexJson: writeIndexJson</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>};</pre></div></div>
             
         </li>
         
