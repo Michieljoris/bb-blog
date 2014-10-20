@@ -1,8 +1,8 @@
 #+TITLE: bb-blog
 
-For a working example see my [[http://github.com/michieljoris/blog][blog]] repo.
+For a working implementation see my [[http://github.com/michieljoris/blog][blog]] repo.
 
-An blogging extension for [[html://github.com/michieljoris/bb-server][bb-server]] (optional) and [[http://github.com/michieljoris/html-builder][html-builder]] (necessary),
+An blogging extension for [[http://github.com/michieljoris/bb-server][bb-server]] (optional) and [[http://github.com/michieljoris/html-builder][html-builder]] (necessary),
 producing post pages, widgets, landing/latest, archive and tag pages. Pagination
 is added when there are more post teasers than fit on a page. Comments from
 Disqus can be enabled for all or per post. Also a little crud api is implemented
@@ -147,8 +147,3 @@ archive, tag and landing pages, and updating relevant widgets. There are 4
 widgets: tags, archive, recent and unpublished.
 
 You can also =render= directly by calling this function.
-
-
-
-
-=
