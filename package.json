@@ -30,6 +30,7 @@
     "logthis": "*",
     "extend": "*",
     "moment": "2.8.x",
+    "org": "0.0.*",
     "speakingurl": "0.11.x",
     "datejs": "1.0.x",
     "colors": "*"
@@ -41,5 +42,5 @@
   "scripts": {
     "docs": "node node_modules/.bin/docco src/bb-blog.js"
   },
-  "version": "0.1.25"
+  "version": "0.1.26"
 }

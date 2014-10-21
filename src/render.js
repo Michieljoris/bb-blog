@@ -332,9 +332,10 @@ function postHeader(meta) {
     var datetime = moment(meta.publishedat).format('Do of MMMM YYYY');
     var html = { tag:"header",
                inner: [
-                   { tag: 'h1', 'class':'title',
+                   { tag: 'h1', 'class':'title blog-post-title',
                      inner: meta.title },
-                   { tag: 'time', datetime:datetime, inner: datetime }
+                   { tag: 'time', 'class': 'blog-post-meta',
+                     datetime:datetime, inner: datetime }
                      // inner: [
                      //     {tag: 'a', href:href, inner:'Jan 1 1970'}
                      // ]}
@@ -563,7 +564,7 @@ function prepareRecipe(pageType) {
         recipe.partials.ids.main = main;
         recipe.partials.ids['meta-page-title'] =
             '<title>' + (settings.siteTitle || 'blog') + '-' + 
-            title + '</title>;';
+            title + '</title>';
         return recipe;
     };
     // log(util.inspect(recipe.get(), { depth:10, colors:true }));
@@ -577,9 +578,10 @@ var recipePreparers = {
         var customize = recipe.customize;
         recipe.customize = function(from, to, meta) {
             var recipe = customize(from, to, postHeader(meta));
+            log('++++++++++++++++++', from);
             recipe.partials.ids['meta-page-title'] =
                 '<title>' + (settings.siteTitle || 'blog') + '-' + 
-                meta.title + '</title>;';
+                meta.title + '</title>';
             return recipe;
         };
         return recipe;

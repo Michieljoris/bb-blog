@@ -8,6 +8,8 @@ var util = require('util');
 var VOW = require('dougs_vow');
 var fs = require('fs-extra');
 var sluggify = require('speakingurl');
+var org = require("org");
+var parser = new org.Parser();      
 
 var render = require('./render');
 
@@ -173,7 +175,23 @@ function retrieveTeaser(str, preBlocks) {
 }
 
 //Parses raw post data and returns meta string and teaser string;
-function parsePost(post) {
+function parsePost(post, type) {
+    if (type === '.html') {
+        
+    }
+    else if (type === '.org') {
+        var orgDocument = parser.parse(post);
+        var orgHTMLDocument = orgDocument.convert(org.ConverterHTML, {
+            headerOffset: 1,
+            exportFromLineNumber: false,
+            suppressSubScriptHandling: false,
+            suppressAutoLink: false
+        });
+        post = orgHTMLDocument.contentHTML;
+        
+    }
+    else throw new Error('Can not parse a post of type ' + type);
+    
     var preBlocks = getPreBlocks(post);
     var metaBlock = preBlocks[0];
     return {
@@ -193,7 +211,7 @@ function createIndex(dir) {
         var stat = fs.statSync(fullPath);
         if (!stat.isFile()) return;
         var post = fs.readFileSync(fullPath, { encoding: 'utf8' });
-        post = parsePost(post);
+        post = parsePost(post, Path.extname(file));
         var title = file.slice(0, file.lastIndexOf('.'));
         listing[file] =
             // extend({ fileName: fullPath } ,
@@ -298,7 +316,7 @@ function processPost(req, action) {
     var meta;
     var file = Path.basename(req.path);
     return (function postParser() {
-        try { meta = parsePost(req.data);
+        try { meta = parsePost(req.data, '.html');
               var title = file.slice(0, file.lastIndexOf('.'));
               meta = parseMetaData(meta.metaStr,
                                    { teaser: meta.teaser,
@@ -406,6 +424,8 @@ function handleRequest(req, res, action) {
 //module and passing different values. Any values not defined are taken from
 //this set of defaults
 var defaults = {
+    //used as meta title for any blog page
+    siteTitle: 'Blog',
     paths: {
         //Base path to directory with source files for html-builder:
         base: 'build',
@@ -415,10 +435,11 @@ var defaults = {
         www: 'www',
         //Path where widgets are found, relative to www
         widgets: 'widget'
-    }
-    //Bb-blog saves data to the server, this limits which paths it is
-    //allowed to save to. This is relative to the paths.base path.
-    ,writable: ['editable', 'post']
+    },
+    //Bb-blog saves data to the server, this limits
+    //which paths it is allowed to save to. This is relative to the paths.base
+    //path.
+    writable: ['editable', 'post']
     //Whether to check for session.data.verified === true, set to false for
     //testing purpose
     ,auth: true,
@@ -519,8 +540,9 @@ module.exports = {
         } catch (e) { publishedat = {}; }
         fs.ensureDirSync(Path.join(settings.paths.base, settings.paths.posts));
         posts = createIndex(Path.join(settings.paths.base, settings.paths.posts));
-        log(util.inspect(posts, { depth:10, colors:true }));
+        log('List of posts meta:\n', util.inspect(posts, { depth:10, colors:true }));
         render.init(settings);
+        render.renderSite(posts);
     },
     save: function(req, res) { handleRequest(req, res, 'save'); },
     new: function(req, res) { handleRequest(req, res, 'new'); },

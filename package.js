@@ -105,7 +105,8 @@ module.exports = {
         "html-builder": "git://github.com/michieljoris/html-builder.git"
         ,"logthis": "*"
         ,"extend": "*"
-        ,"moment": "2.8.x"
+        ,"moment": "2.8.x",
+        'org': '0.0.*'
         // ,"synergipsum": "0.2.x"
         ,"speakingurl": "0.11.x",
         "datejs": "1.0.x",
