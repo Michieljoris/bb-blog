@@ -78,7 +78,10 @@ function pagedTeasers(posts, n) {
         var page = posts.map(function(post) {
             var path = Path.join(settings.pages.post.path, post.slug +
                                 settings.pages.post.ext);
-            return '<div class="box teaser">\n' + '<h2>' + post.title + '</h2>\n' + post.teaser +
+            return '<div class="box teaser">\n' + '<div class="blog-post-title">' +
+                '<span class="teaser-title-icon glyphicon glyphicon-bookmark"></span>' +
+                '<a href="/' + path + '">' + post.title + '</a>' + 
+                '</div>\n' + post.teaser +
                 '\n<span class="more-blog"><a href="/' + path + '">More</a></span>\n</div>';
         }).join('\n');
         pages.push(page);
@@ -332,8 +335,12 @@ function postHeader(meta) {
     var datetime = moment(meta.publishedat).format('Do of MMMM YYYY');
     var html = { tag:"header",
                inner: [
-                   { tag: 'h1', 'class':'title blog-post-title',
+                   { tag: 'div', 'class':'title blog-post-title',
                      inner: meta.title },
+                   
+                     // inner: {
+                     //     tag: 'a', href: meta.slug + '.html', inner: meta.title 
+                     // }
                    { tag: 'time', 'class': 'blog-post-meta',
                      datetime:datetime, inner: datetime }
                      // inner: [
@@ -478,7 +485,8 @@ function renderSite(posts,  file) {
                                         year, monthByName[month]);
                 
                 // log('------------------outpath for archive:', outPath);
-                toBeBuilt = toBeBuilt.concat(addPages('archive', monthByName[month] ,
+                toBeBuilt = toBeBuilt.concat(addPages('archive',
+                                                      monthByName[month] + ' ' + year ,
                                                       subPages, outPath));
                 postsByYear = postsByYear.concat(archive[year][month]);
             });    
