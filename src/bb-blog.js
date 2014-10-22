@@ -11,6 +11,8 @@ var sluggify = require('speakingurl');
 var org = require("org");
 var parser = new org.Parser();      
 
+var htmlBuilder = require('html-builder');
+
 var render = require('./render');
 
 var settings;
@@ -406,7 +408,15 @@ function handleRequest(req, res, action) {
                     (req.path.indexOf(settings.paths.posts) === 0 ?
                      processPost(req, action) : saveFile(req.path, req.data)) :
                 VOW.broken('Not a valid path: ' + req.path);
-                    
+            })
+        .when(
+            function(pathname) {
+                log('file saved');
+                if (req.path.indexOf(settings.paths.posts) !== 0) {
+                    log('rebuilding site and sending response');
+                    return htmlBuilder.build();
+                }
+              else return VOW.kept(pathname);     
             })
         .when(
             function(pathname) {
