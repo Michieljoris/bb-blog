@@ -1,0 +1,144 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/home/michieljoris/bin/node',
+1 verbose cli   '/home/michieljoris/bin/npm',
+1 verbose cli   'publish' ]
+2 info using npm@1.4.9
+3 info using node@v0.10.28
+4 verbose node symlink /home/michieljoris/bin/node
+5 verbose publish [ '.' ]
+6 verbose cache add [ '.', null ]
+7 verbose cache add name=undefined spec="." args=[".",null]
+8 verbose parsed url { protocol: null,
+8 verbose parsed url   slashes: null,
+8 verbose parsed url   auth: null,
+8 verbose parsed url   host: null,
+8 verbose parsed url   port: null,
+8 verbose parsed url   hostname: null,
+8 verbose parsed url   hash: null,
+8 verbose parsed url   search: null,
+8 verbose parsed url   query: null,
+8 verbose parsed url   pathname: '.',
+8 verbose parsed url   path: '.',
+8 verbose parsed url   href: '.' }
+9 silly lockFile 3a52ce78- .
+10 verbose lock . /home/michieljoris/.npm/3a52ce78-.lock
+11 verbose tar pack [ '/home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz',
+11 verbose tar pack   '.' ]
+12 verbose tarball /home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz
+13 verbose folder .
+14 info prepublish bb-blog@0.1.30
+15 silly lockFile 1f1177db-tar tar://.
+16 verbose lock tar://. /home/michieljoris/.npm/1f1177db-tar.lock
+17 silly lockFile 656434d6-74544-0-7390637290664017-tmp-tgz tar:///home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz
+18 verbose lock tar:///home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz /home/michieljoris/.npm/656434d6-74544-0-7390637290664017-tmp-tgz.lock
+19 silly lockFile 1f1177db-tar tar://.
+20 silly lockFile 1f1177db-tar tar://.
+21 silly lockFile 656434d6-74544-0-7390637290664017-tmp-tgz tar:///home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz
+22 silly lockFile 656434d6-74544-0-7390637290664017-tmp-tgz tar:///home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz
+23 verbose tar unpack /home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz
+24 silly lockFile 20bc0d63-joris-npm-bb-blog-0-1-30-package tar:///home/michieljoris/.npm/bb-blog/0.1.30/package
+25 verbose lock tar:///home/michieljoris/.npm/bb-blog/0.1.30/package /home/michieljoris/.npm/20bc0d63-joris-npm-bb-blog-0-1-30-package.lock
+26 silly lockFile 656434d6-74544-0-7390637290664017-tmp-tgz tar:///home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz
+27 verbose lock tar:///home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz /home/michieljoris/.npm/656434d6-74544-0-7390637290664017-tmp-tgz.lock
+28 silly gunzTarPerm modes [ '755', '644' ]
+29 silly gunzTarPerm extractEntry package.json
+30 silly gunzTarPerm modified mode [ 'package.json', 488, 492 ]
+31 silly gunzTarPerm extractEntry .npmignore
+32 silly gunzTarPerm modified mode [ '.npmignore', 488, 492 ]
+33 silly gunzTarPerm extractEntry package.js
+34 silly gunzTarPerm modified mode [ 'package.js', 488, 492 ]
+35 silly gunzTarPerm extractEntry bb-blog.org
+36 silly gunzTarPerm modified mode [ 'bb-blog.org', 488, 492 ]
+37 silly gunzTarPerm extractEntry bin/docs
+38 silly gunzTarPerm modified mode [ 'bin/docs', 488, 492 ]
+39 silly gunzTarPerm extractEntry docs/bb-blog.html
+40 silly gunzTarPerm modified mode [ 'docs/bb-blog.html', 488, 492 ]
+41 silly gunzTarPerm extractEntry docs/custom.css
+42 silly gunzTarPerm modified mode [ 'docs/custom.css', 488, 492 ]
+43 silly gunzTarPerm extractEntry docs/docco.css
+44 silly gunzTarPerm modified mode [ 'docs/docco.css', 488, 492 ]
+45 silly gunzTarPerm extractEntry docs/public/fonts/aller-bold.eot
+46 silly gunzTarPerm modified mode [ 'docs/public/fonts/aller-bold.eot', 488, 492 ]
+47 silly gunzTarPerm extractEntry docs/public/fonts/aller-bold.ttf
+48 silly gunzTarPerm modified mode [ 'docs/public/fonts/aller-bold.ttf', 488, 492 ]
+49 silly gunzTarPerm extractEntry docs/public/fonts/aller-bold.woff
+50 silly gunzTarPerm modified mode [ 'docs/public/fonts/aller-bold.woff', 488, 492 ]
+51 silly gunzTarPerm extractEntry docs/public/fonts/aller-light.eot
+52 silly gunzTarPerm modified mode [ 'docs/public/fonts/aller-light.eot', 488, 492 ]
+53 silly gunzTarPerm extractEntry docs/public/fonts/aller-light.ttf
+54 silly gunzTarPerm modified mode [ 'docs/public/fonts/aller-light.ttf', 488, 492 ]
+55 silly gunzTarPerm extractEntry docs/public/fonts/aller-light.woff
+56 silly gunzTarPerm modified mode [ 'docs/public/fonts/aller-light.woff', 488, 492 ]
+57 silly gunzTarPerm extractEntry docs/public/fonts/novecento-bold.eot
+58 silly gunzTarPerm modified mode [ 'docs/public/fonts/novecento-bold.eot', 488, 492 ]
+59 silly gunzTarPerm extractEntry docs/public/fonts/novecento-bold.ttf
+60 silly gunzTarPerm modified mode [ 'docs/public/fonts/novecento-bold.ttf', 488, 492 ]
+61 silly gunzTarPerm extractEntry docs/public/fonts/novecento-bold.woff
+62 silly gunzTarPerm modified mode [ 'docs/public/fonts/novecento-bold.woff', 488, 492 ]
+63 silly gunzTarPerm extractEntry docs/public/stylesheets/normalize.css
+64 silly gunzTarPerm modified mode [ 'docs/public/stylesheets/normalize.css', 488, 492 ]
+65 silly gunzTarPerm extractEntry old/test-lorem.js
+66 silly gunzTarPerm modified mode [ 'old/test-lorem.js', 488, 492 ]
+67 silly gunzTarPerm extractEntry old/test.js
+68 silly gunzTarPerm modified mode [ 'old/test.js', 488, 492 ]
+69 silly gunzTarPerm extractEntry readme.org
+70 silly gunzTarPerm modified mode [ 'readme.org', 488, 492 ]
+71 silly gunzTarPerm extractEntry src/bb-blog.js
+72 silly gunzTarPerm modified mode [ 'src/bb-blog.js', 488, 492 ]
+73 silly gunzTarPerm extractEntry src/render.js
+74 silly gunzTarPerm modified mode [ 'src/render.js', 488, 492 ]
+75 silly gunzTarPerm extractEntry src/server-connection.js
+76 silly gunzTarPerm modified mode [ 'src/server-connection.js', 488, 492 ]
+77 silly lockFile 20bc0d63-joris-npm-bb-blog-0-1-30-package tar:///home/michieljoris/.npm/bb-blog/0.1.30/package
+78 silly lockFile 20bc0d63-joris-npm-bb-blog-0-1-30-package tar:///home/michieljoris/.npm/bb-blog/0.1.30/package
+79 silly lockFile 656434d6-74544-0-7390637290664017-tmp-tgz tar:///home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz
+80 silly lockFile 656434d6-74544-0-7390637290664017-tmp-tgz tar:///home/michieljoris/tmp/npm-24939-aggQu-w_/1416881774544-0.7390637290664017/tmp.tgz
+81 silly lockFile 3a52ce78- .
+82 silly lockFile 3a52ce78- .
+83 silly publish { name: 'bb-blog',
+83 silly publish   description: 'For a working implementation see my [[http://github.com/michieljoris/blog][blog]] repo.',
+83 silly publish   homepage: 'https://github.com/michieljoris/bb-blog',
+83 silly publish   keywords: [],
+83 silly publish   repository:
+83 silly publish    { type: 'git',
+83 silly publish      url: 'https://github.com/michieljoris/bb-blog.git' },
+83 silly publish   author:
+83 silly publish    { name: 'Michiel van Oosten',
+83 silly publish      email: 'mail@axion5.net',
+83 silly publish      url: 'http://www.axion5.net/' },
+83 silly publish   licenses:
+83 silly publish    [ { type: 'MIT',
+83 silly publish        url: 'http://github.com/michieljoris/bb-blog/blob/master/LICENSE.txt' } ],
+83 silly publish   main: 'src/bb-blog.js',
+83 silly publish   bin: {},
+83 silly publish   engines: { node: '>= 0.6.x' },
+83 silly publish   dependencies:
+83 silly publish    { dougs_vow: '*',
+83 silly publish      'fs-extra': '0.11.x',
+83 silly publish      'html-builder': 'git://github.com/michieljoris/html-builder.git',
+83 silly publish      logthis: '*',
+83 silly publish      extend: '*',
+83 silly publish      moment: '2.8.x',
+83 silly publish      org: '0.0.*',
+83 silly publish      speakingurl: '0.11.x',
+83 silly publish      datejs: '1.0.x',
+83 silly publish      colors: '*' },
+83 silly publish   devDependencies: { docco: '*' },
+83 silly publish   private: false,
+83 silly publish   scripts: { docs: 'node node_modules/.bin/docco src/bb-blog.js' },
+83 silly publish   version: '0.1.30',
+83 silly publish   readme: '#+TITLE: bb-blog\n\nFor a working implementation see my [[http://github.com/michieljoris/blog][blog]] repo.\n\nAn blogging extension for [[http://github.com/michieljoris/bb-server][bb-server]] (optional) and [[http://github.com/michieljoris/html-builder][html-builder]] (necessary),\nproducing post pages, widgets, landing/latest, archive and tag pages. Pagination\nis added when there are more post teasers than fit on a page. Comments from\nDisqus can be enabled for all or per post. Also a little crud api is implemented\nso the blog could be managed from the site where the blog is implemented.\n\nAll posts are freely editable as files. Simple meta data (title, published, date\netc) is extracted from them to produce the proper pages.\n\nThe crud interface basically implements a number of request handler functions. Bb-server is\nable to forward any route/method combination any function to handle. Bb-server calls these\nfunctions with the following signature, and this is what bb-blog expects: fn(req, res).\n\nBb-blog receives the requests and is able to save a new post, update or remove an\nexisting post, or just render the blog.\n\nPosts are saved on the server as files, not in a database. Bb-blog is\nable to render the whole blog from just the posts. It uses html-builder to\nactually render the site. All bb-blog does is parse all the posts in some folder,\nand produce a number of fragments which then are used by html-builder to put the\nwhole site together. \n\nSo once bb-server runs, bb-blog is properly configured and the build recipes\nfor html-builder are properly set, one command (render) to the server will\nbuild the site. By configuring the recipes and adding the right fragments to\nthe build directory a site can be built that is more than just a blog.\n\nHtml-builder is able to take any html fragment (from disk or inline in the\nrecipe), build more fragments out of them and then output a html file again for\nany of them. All bb-blog does really is create html fragments out of\nposts. These fragments are the posts themselves, collection pages\n(tag/archive/landing) and widgets (tag, recent, archive, unpublished). This\nmeans that in bb-blog\'s configuration you need to specify where you want these\nfragments inserted. This is the =from= object path into the recipe (see\nconfiguration example below). You also want to specify where you want to save\nthe resulting file. This is the =to= object path into the recipe. Furthermore\nbb-blog will add html fragments into the recipe under the names of recentWidget,\narchiveWidget, tagWidget and unpublishedWidget. You can use these fragments in\nthe recipe to build other fragments.\n\nExample configuration: \n\n#+begin_src javascript\n//Any of these settings can be overridden by calling the init function on this\n//module and passing different values. Any values not defined are taken from\n//this set of defaults\nvar defaults = {\n    paths: {\n        //Base path to directory with source files for html-builder:\n        base: \'build\',\n        //Path where posts are saved, relative to paths.base:\n        posts: \'post\',\n        //Path to directory served to internet:\n        www: \'www\',\n        //Path where widgets are found, relative to www\n        widgets: \'widget\'\n    }\n    //Bb-blog saves data to the server, this limits which paths it is\n    //allowed to save to. This is relative to the paths.base path.\n    ,writable: [\'editable\', \'post\']\n    //Whether to check for session.data.verified === true, set to false for\n    //testing purpose\n    ,auth: true,\n    //Number of teasers/posts per page on collection pages such as landing,\n    //archive and tag.\n    pagination: 3\n    //Recent, archive and tag widget\n    //You would set save to true if you want to pull these widgets in ajax calls\n    //to build a page dynamically on the client, they get saved to path set in\n    //paths above, max refers to number blog titles listed in a widget\n    ,widgets: {\n        recent: { max: 3, save: false } ,archive: { save: false } ,tag: { max: 3 }\n    }\n    //If set to true, whether comments are enabled are decided per post,\n    //depending on what the setting is in the post\'s metadata. \n    ,enableCommentsPerPost: true\n    //Global comment setting, only effective if previous setting is set to\n    //false, set both to false to disable comments altogether\n    ,comments: true\n    \n    //A recipe (string) or a list of recipes used to build pages unless\n    //overridden for a page in the particular pages prop below.\n    ,recipe: { editable: \'recipe.js\', nojs: \'recipe.js\' }\n    //If the previous prop is a list the following prop decides which recipe in\n    //the list is used. This should be one of the keys of the previous prop.\n    ,renderMode: \'editable\'\n    //Default path into a recipe to where bb-blog is to insert its payload\n    //(post, archive/tag/landing teaser list etc), can also be overridden for\n    //any particular page by adding this setting to it, eg to pages.post.from\n    ,from: [ \'fromTemplate\', \'mapping\', \'main\']\n    //Default object path into a recipe to where bb-blog is to insert the out\n    //path for a particular page, for instance pages.post.path gets inserted\n    //here when building a post page. Can be set per page as well.\n    ,to: [ \'toTemplate\', \'out\' ]\n    //For keeping track of when first published. Can be overridden by adding\n    //publishedat metadata to a post, no need to modify. TODO Maybe should be\n    //removed from here..\n    ,publishedat: \'publishedat.json\'\n    \n    //Bb-blog can build collections of posts, organised by tag, year/month,\n    //unpublished status and just all of them in reverse chronological order\n    //(landing). Other than that it can build a page for every post as well. Set\n    //any of the following to false to prevent the page(s) from being build. Or\n    //assign an object specifying path to save the pages to (relative to\n    //base.www) and/or a recipe to use to build the page. A full example set of\n    //props is given for the archive page. All pages can also just be set to\n    //true or false, or a string for a path.\n    ,pages: {\n        // Landing page with all teasers of posts (paginated).\n        landing: true,\n        // Archive pages. Teasers of posts listed by years and months. \n        archive: { path: \'archive\'\n                   // ,recipe: \'some archive recipe\'  //or:\n                   // ,recipe: { editable: \'recipe.js\', nojs: \'recipe.js\' }\n                   // ,from: [ \'fromTemplate\', \'mapping\', \'main\']\n                   // ,to: [ \'toTemplate\', \'out\' ]\n                 },\n        // List of teasers of posts, listed by tag. \n        tag: { path: \'tag\' },\n        // A page with a post\n        post: { path: \'post\' },\n        //Any unpublished posts will be added to the unpublished folder, not to\n        //the post folder. Only prop that can be set is the path.\n        unpublished: { path: \'unpublished\' }\n    }\n    //NOT TESTED\n    //Json of list of posts on server. Also set whether to add recalculated\n    //lists. Set to false to disable producing this json. Can be used by client\n    //to dynamically build a blog.\n    ,json: { byTag: true, byYearMonth: true, byReverseDate: true }\n};\n\nvar blog = require(\'bb-blog\');\n\nblog.init(defaults);\n\n//functions that handle requests:\nblog.save(req, res);\nblog.new(req, res);\nblog.remove(req, res);\nblog.render(req, res);\n#+end_src\n\n=save= should be a POST request and expects a query parameter called path and\ndata. The path refers to a path/file name on the server where the data should be\nsaved. Where this is exactly is set in the configuration for bb-blog (see above)\n\n=new= expects the same path parameter, but nothing more. A new post is created\nusing the path as file name.\n\n=remove= again expects a path parameter and removes the appropriate file.\n\nAll three commands will automatically re-render the site after\ndeleting/updating/creating the right file. This also means recalculating\narchive, tag and landing pages, and updating relevant widgets. There are 4\nwidgets: tags, archive, recent and unpublished.\n\nYou can also =render= directly by calling this function.\n',
+83 silly publish   readmeFilename: 'readme.org',
+83 silly publish   bugs: { url: 'https://github.com/michieljoris/bb-blog/issues' },
+83 silly publish   _id: 'bb-blog@0.1.30',
+83 silly publish   _shasum: '59a2c687a768f8d86af7b3a6a6a0e48ef7c34e24',
+83 silly publish   _from: '.' }
+84 error need auth auth and email required for publishing
+84 error need auth You need to authorize this machine using `npm adduser`
+85 error System Linux 3.13.0-32-generic
+86 error command "/home/michieljoris/bin/node" "/home/michieljoris/bin/npm" "publish"
+87 error cwd /media/michieljoris/d5099508-7d17-4aea-ac80-ac38100b9447/mysrc/javascript/bb-blog
+88 error node -v v0.10.28
+89 error npm -v 1.4.9
+90 error code ENEEDAUTH
+91 verbose exit [ 1, true ]
