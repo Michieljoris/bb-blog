@@ -50,7 +50,8 @@ function groupByYearMonth(postList, filterAttr) {
                 var month = m.month();
                 archive[year] = archive[year] || {};
                 archive[year][month] = archive[year][month] || [];
-                archive[year][month].unshift(p);
+                // archive[year][month].unshift(p);
+                archive[year][month].push(p);
             // }
         });
     return archive;
@@ -77,12 +78,47 @@ function pagedTeasers(posts, n) {
     pagedPosts.forEach(function(posts) {
         var page = posts.map(function(post) {
             var path = Path.join(settings.pages.post.path, post.slug +
-                                settings.pages.post.ext);
-            return '<div class="box teaser">\n' + '<div class="blog-post-title">' +
-                '<span class="teaser-title-icon glyphicon glyphicon-bookmark"></span>' +
-                '<a href="/' + path + '">' + post.title + '</a>' + 
-                '</div>\n' + post.teaser +
-                '\n<span class="more-blog"><a href="/' + path + '">More</a></span>\n</div>';
+                                 settings.pages.post.ext);
+
+            var datetime = moment(post.publishedat).format('Do of MMMM YYYY');
+            var html = { tag:"div", 'class':'box teaser',
+                         inner: [
+                             { tag: 'div', 'class': 'blog-post-title',
+                               inner: [
+                                   { tag: 'span', 'class': "teaser-title-icon glyphicon glyphicon-bookmark" },
+                                   { tag: 'a',  href: '/' + path, inner:  post.title}
+                               ]
+                             }
+
+                             ,{ tag: 'time', 'class': 'blog-post-meta',
+                                datetime:datetime, inner: datetime }
+                             ,post.teaser
+                             ,{ tag: 'span', 'class': 'more-blog',
+                                inner: [
+                                    { tag: 'a', href: '/' + path, inner: [ 'More']}
+                                ]}
+                             
+                             // { tag: 'div', 'class':'title blog-post-title',
+                             //   inner: meta.title },
+                   
+                             // inner: {
+                             //     tag: 'a', href: meta.slug + '.html', inner: meta.title 
+                             // }
+                             // { tag: 'time', 'class': 'blog-post-meta',
+                             //   datetime:datetime, inner: datetime }
+                             // inner: [
+                             //     {tag: 'a', href:href, inner:'Jan 1 1970'}
+                             // ]}
+                             // inner: [
+                             // {tag: 'a', href:href, inner: meta.title}
+                             // ]}
+                         ]};
+            // return '<div class="box teaser">\n' + '<div class="blog-post-title">' +
+            //     '<span class="teaser-title-icon glyphicon glyphicon-bookmark"></span>' +
+            //     '<a href="/' + path + '">' + post.title + '</a>' + 
+            //     '</div>\n' + post.teaser +
+            //     '\n<span class="more-blog"><a href="/' + path + '">More</a></span>\n</div>';
+            return htmlizeObject(html);
         }).join('\n');
         pages.push(page);
     });
@@ -111,9 +147,9 @@ function sortIndexListByDate(postList) {
         var a = p1.publishedat;
         var b = p2.publishedat;
         if (a > b)
-            return -1;
-        if (a < b)
             return 1;
+        if (a < b)
+            return -1;
         // a must be equal to b
         return 0;
     });
@@ -273,6 +309,9 @@ function htmlizeObject(obj) {
 //n -> basePath/n
 // with prev and next pointing to the basePath/c-1 and basePath/c+1 pages:
 function pageNav(basePath, n, c) {
+    if (basePath.indexOf(settings.paths.www) === 0) {
+        basePath = basePath.slice(settings.paths.www.length) || '/';
+    }
     if (n <= 1) return '';
     var html = { tag: 'nav', id: 'page-nav',
                  inner: (function() {
@@ -419,7 +458,7 @@ function renderSite(posts,  file) {
                     //the post page
                     if ((!settings.enableCommentsPerPost && !settings.comments) ||
                         (settings.enableCommentsPerPost && !meta.comments)) {
-                        log(meta, '--------------------------------------');
+                        // log(meta, '--------------------------------------');
                         delete fromObj['disqus-embed'];
                         delete fromObj['disqus-count'];
                     }
@@ -586,7 +625,7 @@ var recipePreparers = {
         var customize = recipe.customize;
         recipe.customize = function(from, to, meta) {
             var recipe = customize(from, to, postHeader(meta));
-            log('++++++++++++++++++', from);
+            // log('++++++++++++++++++', from);
             recipe.partials.ids['meta-page-title'] =
                 '<title>' + (settings.siteTitle || 'blog') + '-' + 
                 meta.title + '</title>';

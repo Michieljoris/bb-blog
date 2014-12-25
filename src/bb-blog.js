@@ -205,6 +205,7 @@ function parsePost(post, type) {
 //metadata for each file, sets publish prop according to path
 function createIndex(dir) {
     log('creating listing for dir:', dir);
+    // log('publishedat.json', publishedat);
     // var publish = Path.basename(dir) !== settings.unpublished;
     var files = fs.readdirSync(dir);
     var listing = {};
@@ -222,12 +223,14 @@ function createIndex(dir) {
                             teaser: post.teaser,
                             title: title
                           });
-        if (listing[file].published && !publishedat[file]) {
-            listing[file].publishedat =
-                publishedat[file] = listing[file].publishedat || new Date();
+        // log('PUBLISHEDAT', file);
+        if (listing[file].published && !listing[file].publishedat) {
+            publishedat[file] = publishedat[file] || new Date();
+            listing[file].publishedat = publishedat[file];
         }
         listing[file].file = file;
         listing[file].slug = sluggify(listing[file].title);
+        // log(listing[file].publishedat, typeof listing[file].publishedat);
     });
     log('writing publishedat.json');
     fs.writeJsonSync(Path.join(settings.paths.base, settings.publishedat), publishedat);
@@ -547,6 +550,11 @@ module.exports = {
         // log('someSettings', util.inspect(someSettings, { depth:10, colors:true }));
         try {
             publishedat = fs.readJsonSync(Path.join(settings.paths.base, settings.publishedat));
+            Object.keys(publishedat).forEach(function(post) {
+                var d = Date.parse(publishedat[post]);
+                if (!isNaN(d)) publishedat[post] = new Date(d);
+                else delete publishedat[post];
+            });
         } catch (e) { publishedat = {}; }
         fs.ensureDirSync(Path.join(settings.paths.base, settings.paths.posts));
         posts = createIndex(Path.join(settings.paths.base, settings.paths.posts));

@@ -197,6 +197,9 @@ rebuild relevant month, year, landing
 
     
 * TODO
+** make archive tree collapsible
+** remove hexo-blog from github
+
 ** proper error reporting:
 Letting the user know what happened when something went wrong!!!
    
@@ -219,6 +222,11 @@ add upload button:
 ** calculate proper teasers for posts, not just all or nothing if no teaser break is found
   in bb-blog.js/retrieveTeaser 
 ** create archive page and collapsed archive widget   
+** DONE turn archive order around, make last written on top of list
+** DONE put recent posts in reverse chronological order
+** DONE put posts in order on front page
+** DONE add date under title
+** DONE link on home page page2 shouldn't be www/page2
 ** DONE add to firstdoor
 ** DONE filter out unpublished 
 ** DONE setting meta title for browser history and backward/forward buttons
